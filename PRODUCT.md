@@ -42,7 +42,7 @@ An optimizer built from the game's own data tables, not a ranking: it simulates 
 - Outputs: the next purchase ("Buy now" or "Save up: N more coins") and why, the full plan with approximate times, the estimated final length with the solo reward tiers it reaches, and the rules used with their status.
 - No game value is invented: an unknown value is asked from the player or labelled assumed.
 - English interface.
-- Undecided: whether the repository becomes public (if it stays private, the page carries no link to the source code); the exact `*.pages.dev` address.
+- The repository is public (owner, 2026-10-14, for GitHub Pages); the page links to its source code. Undecided: the exact `*.pages.dev` address once Cloudflare Pages is set up.
 
 ## Brand Commitments
 

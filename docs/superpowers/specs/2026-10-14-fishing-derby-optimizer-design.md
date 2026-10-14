@@ -247,7 +247,7 @@ Sources : [Git integration](https://developers.cloudflare.com/pages/get-started/
 ## 15. Questions ouvertes
 
 - **Nom de l'outil** : « TT2 Fishing Derby Optimizer » est une proposition, à confirmer par le propriétaire.
-- **Visibilité du dépôt** (décision du propriétaire) et, s'il reste privé, ce que deviennent le lien vers le code source du pied de page et le champ `repo` du hub (§ 14).
+- ~~**Visibilité du dépôt**~~ : tranché le 14 octobre 2026 (soir), le propriétaire rend le dépôt public pour GitHub Pages ; le pied de page porte le lien vers le code source.
 - Adresse exacte en `*.pages.dev`, connue une fois le projet Cloudflare créé.
 - Existence et effet de `FishingBait` ; ce qui fait monter le niveau de la table de rareté.
 - Bases du plafond quotidien et de la capacité de la Tacklebox ; unité de `TackleBoxSpeed` et sens de sa valeur 0.
