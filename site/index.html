@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="Which Fishing Derby upgrade to buy next in Tap Titans 2, and the whole purchase plan to the end of the event." />
+  <title>TT2 Fishing Derby Optimizer</title>
+  <meta name="theme-color" content="#0e1118" />
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@500&family=Outfit:wght@600;700&display=swap" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <a class="skip-link" href="#result">Skip to the next purchase</a>
+
+  <header class="masthead">
+    <img class="mark" src="favicon.svg" alt="" width="48" height="48" />
+    <div>
+      <h1>TT2 Fishing Derby Optimizer</h1>
+      <p>Enter what the game shows. The tool tells you which upgrade to buy next, and plans the rest of the event for the longest total catch.</p>
+    </div>
+  </header>
+
+  <p id="loading" class="loading" role="status">Loading the game data…</p>
+
+  <div id="loadError" class="notice notice-error page-notice" role="alert" hidden>
+    <p><strong>The game data could not load.</strong> <span id="loadErrorText"></span></p>
+    <button id="reload" type="button" class="btn-quiet">Reload</button>
+  </div>
+
+  <main id="app" class="layout" hidden>
+    <form id="inputs" class="panel inputs" aria-labelledby="inputsTitle" novalidate>
+      <h2 id="inputsTitle">What the game shows</h2>
+
+      <fieldset class="group">
+        <legend>Upgrade levels</legend>
+        <div id="levels" class="levels"></div>
+      </fieldset>
+
+      <fieldset class="group">
+        <legend>Right now</legend>
+        <div class="fields">
+          <div class="field">
+            <label for="coins">Fishing Coins</label>
+            <input id="coins" name="coins" type="number" inputmode="numeric" min="0" step="1" autocomplete="off" />
+          </div>
+          <div class="field">
+            <label for="lures">Lures in stock</label>
+            <input id="lures" name="lures" type="number" inputmode="numeric" min="0" step="1" autocomplete="off" />
+          </div>
+          <div class="field field-wide">
+            <label for="lengthSoFar">Total length caught so far</label>
+            <input id="lengthSoFar" name="lengthSoFar" type="number" inputmode="decimal" min="0" step="any" autocomplete="off" />
+          </div>
+          <div class="field field-wide time-left" role="group" aria-labelledby="timeLeftLabel" aria-describedby="timeLeftHint">
+            <span id="timeLeftLabel" class="label">Time left in the event</span>
+            <div class="pair">
+              <div class="unit">
+                <input id="daysLeft" name="daysLeft" type="number" inputmode="numeric" min="0" step="1" autocomplete="off" aria-labelledby="timeLeftLabel daysUnit" />
+                <label id="daysUnit" for="daysLeft">days</label>
+              </div>
+              <div class="unit">
+                <input id="hoursPart" name="hoursPart" type="number" inputmode="numeric" min="0" step="1" autocomplete="off" aria-labelledby="timeLeftLabel hoursUnit" />
+                <label id="hoursUnit" for="hoursPart">hours</label>
+              </div>
+            </div>
+            <p id="timeLeftHint" class="hint">From the event's countdown.</p>
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset class="group">
+        <legend>How you play</legend>
+        <div class="fields">
+          <div class="field">
+            <label for="prestigesPerDay">Prestiges per day</label>
+            <input id="prestigesPerDay" name="prestigesPerDay" type="number" inputmode="decimal" min="0" step="any" autocomplete="off" />
+          </div>
+          <div class="field">
+            <label for="visitsPerDay">Visits per day</label>
+            <input id="visitsPerDay" name="visitsPerDay" type="number" inputmode="decimal" min="0" step="any" autocomplete="off" aria-describedby="visitsHint" />
+            <p id="visitsHint" class="hint">Times you open the game and fish.</p>
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset id="shownGroup" class="group" hidden>
+        <legend>Two values the tool does not know yet</legend>
+        <p class="hint">Copy them from the game at your current levels. They replace the rules' unknown base values.</p>
+        <div class="fields">
+          <div class="field" id="shownDailyCapField">
+            <label for="shownDailyCap">Daily lure limit shown in game</label>
+            <input id="shownDailyCap" name="shownDailyCap" type="number" inputmode="numeric" min="0" step="1" autocomplete="off" />
+          </div>
+          <div class="field" id="shownTackleboxField">
+            <label for="shownTackleboxCapacity">Tacklebox capacity shown in game</label>
+            <input id="shownTackleboxCapacity" name="shownTackleboxCapacity" type="number" inputmode="numeric" min="0" step="1" autocomplete="off" />
+          </div>
+        </div>
+      </fieldset>
+    </form>
+
+    <section id="result" class="result" aria-labelledby="resultTitle" tabindex="-1">
+      <div class="result-head">
+        <h2 id="resultTitle">What to buy next</h2>
+        <p id="progress" class="progress" role="status" aria-live="polite"></p>
+      </div>
+
+      <div id="missing" class="notice" hidden>
+        <p>To plan, the tool still needs:</p>
+        <ul id="missingList" class="missing-list"></ul>
+      </div>
+
+      <p id="ended" class="notice" hidden>The event has ended: there is nothing left to plan.</p>
+
+      <div id="planError" class="notice notice-error" role="alert" hidden>
+        <p><strong>The plan could not be computed.</strong> <span id="planErrorText"></span></p>
+      </div>
+
+      <div id="planView" hidden>
+        <article id="nextCard" class="next" aria-labelledby="nextName" hidden>
+          <h3 id="nextName" class="next-name"></h3>
+          <p class="next-step"><span id="nextLevels"></span><span class="sep" aria-hidden="true"> · </span><span id="nextCost"></span></p>
+          <p id="nextVerdict" class="next-verdict"></p>
+          <p id="nextWhen" class="next-when"></p>
+          <p id="nextWhy" class="next-why"></p>
+        </article>
+
+        <p id="nothing" class="notice" hidden>Nothing worth buying before the event ends: every upgrade left adds no length in the time remaining.</p>
+
+        <section class="estimate" aria-labelledby="estimateTitle">
+          <h3 id="estimateTitle">Estimated final length</h3>
+          <p id="finalLength" class="final-length"></p>
+          <p class="hint">Best plan found, in expected values. It is an estimate: the rules marked assumed below can move it.</p>
+          <p id="tiers" class="tiers"></p>
+        </section>
+
+        <section class="plan" aria-labelledby="planTitle">
+          <h3 id="planTitle">The plan to the end</h3>
+          <p class="hint">Each upgrade is bought as soon as you have the coins. Times are approximate, from your visits per day.</p>
+          <table id="planTable" class="plan-table">
+            <thead>
+              <tr>
+                <th scope="col">Upgrade</th>
+                <th scope="col" class="num">Cost</th>
+                <th scope="col">When</th>
+                <th scope="col" class="num">Length then</th>
+              </tr>
+            </thead>
+            <tbody id="planRows"></tbody>
+          </table>
+          <button id="planToggle" type="button" class="btn-quiet plan-toggle" aria-controls="planTable" aria-expanded="false" hidden></button>
+        </section>
+      </div>
+    </section>
+  </main>
+
+  <section id="rulesSection" class="rules" aria-labelledby="rulesTitle" hidden>
+    <details>
+      <summary><h2 id="rulesTitle">The rules the plan rests on</h2></summary>
+      <p class="hint">Some game rules are not published. Each one says whether it was checked in the game or is assumed.</p>
+      <ul id="rulesList" class="rules-list"></ul>
+    </details>
+  </section>
+
+  <footer class="site-footer">
+    <p>
+      Game data: <a href="https://github.com/rawrzcookie/TT2_CSV">TT2_CSV by rawrzcookie</a>.
+      Event rules: <a href="https://gamehive.com/blog/devupdate-142-questing-into-the-deep">Game Hive, DevUpdate #142</a>.
+    </p>
+    <p>
+      Unofficial. Tap Titans 2 is a trademark of Game Hive Corp.
+      This site is not affiliated with or endorsed by Game Hive.
+    </p>
+    <p>MIT licence, © 2026 kasaden.</p>
+  </footer>
+
+  <script type="module" src="index.js"></script>
+</body>
+</html>
