@@ -8,7 +8,7 @@ web
 
 ## Stack
 
-Same as the owner's other TT2 tools (confirmed 2026-10-14): plain HTML, CSS and JavaScript, no framework, no build step, no dependency, no server-side code. Everything runs in the browser; the plan search runs in a Web Worker. Published by Cloudflare Pages (Git integration, production branch `main`, build output directory `site`); only the files in `site/` are published.
+Same as the owner's other TT2 tools (confirmed 2026-10-14): plain HTML, CSS and JavaScript, no framework, no build step, no dependency, no server-side code. Everything runs in the browser; the plan search runs in a Web Worker. Published on GitHub Pages for now (owner, 2026-10-14), by a GitHub Actions workflow that runs the tests and publishes `site/` only; Cloudflare Pages (Git integration, production branch `main`, build output directory `site`) is planned next. Either way, only the files in `site/` are published.
 
 ## Users
 

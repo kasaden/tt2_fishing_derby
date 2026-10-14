@@ -3,6 +3,7 @@
 - **Date** : 14 octobre 2026.
 - **Statut** : à relire par le propriétaire. Rien n'est construit. Le dépôt contient `README.md`, `LICENSE` et `fishing_derby_data/` (6 CSV, leur README, `model_check.py`).
 - **Révision du 14 octobre 2026** : publication sur Cloudflare Pages au lieu de GitHub Pages, et séparation du dossier publié (`site/`), d'après les décisions du propriétaire prises dans la session du hub (surtout § 10 et § 14 ; touches aux § 2, 5, 7, 8, 12, 13 et 15).
+- **Révision du 14 octobre 2026 (soir)** : à la demande du propriétaire, première mise en ligne sur GitHub Pages, par un workflow GitHub Actions qui ne publie que `site/` ; Cloudflare Pages (§ 14) reste prévu ensuite.
 - **Langue** : cette spec est en français pour la relecture. Le code, l'interface et la documentation publique du dépôt seront en anglais.
 - **Références** : `fishing_derby_data/README.md` (provenance et vérification des CSV, 14 octobre 2026), le billet GameHive [DevUpdate #142](https://gamehive.com/blog/devupdate-142-questing-into-the-deep) (4 juillet 2025), les dépôts voisins `../tt2_hub` (DESIGN.md, PRODUCT.md, `tools.json`), `../tt2_alchemy_lab` et `../tt2_monuments`, en lecture seule. La documentation Cloudflare citée au § 14, lue le 14 octobre 2026.
 
@@ -224,6 +225,8 @@ Interface (preuve par le rendu) : captures à 375 et 1 440 px, `npx impeccable d
 4. Ajout au hub (`../tt2_hub/tools.json` et emblème) : autre dépôt, tâche séparée, avec l'accord du propriétaire. Son `url` sera l'adresse en `*.pages.dev`, puis `derby.kasaden.io`.
 
 ## 14. Publication
+
+**Pour l'instant (propriétaire, 14 octobre 2026, soir)** : GitHub Pages, via le workflow `.github/workflows/pages.yml` (tests, puis publication du seul dossier `site/` à chaque envoi sur `main`). Adresse attendue : `https://kasaden.github.io/tt2_fishing_derby/`. GitHub Pages gratuit exige un dépôt public. Les décisions Cloudflare ci-dessous restent la cible suivante.
 
 Décisions du propriétaire du 14 octobre 2026, prises dans la session du hub. La documentation Cloudflare citée en bas de section a été lue le même jour.
 

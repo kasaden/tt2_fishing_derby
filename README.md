@@ -62,7 +62,7 @@ In the page (headless Chrome, the 72-hour case): the first plan is on screen abo
 
 ## Publishing
 
-Cloudflare Pages, connected to this repository: no framework preset, an empty build command, build output directory `site`, production branch `main`.
+For now, GitHub Pages: `.github/workflows/pages.yml` runs the tests and publishes `site/` only, on every push to `main` (repository settings: Pages, source "GitHub Actions"). Expected address: https://kasaden.github.io/tt2_fishing_derby/. Planned next: Cloudflare Pages connected to this repository, with no framework preset, an empty build command, build output directory `site` and production branch `main`.
 
 ## Licence
 
