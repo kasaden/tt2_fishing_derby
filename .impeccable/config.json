@@ -1,0 +1,20 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "overused-font",
+        "value": "geist",
+        "createdAt": "2026-10-14T13:32:57.029Z",
+        "reason": "Family base pinned by ../tt2_hub/DESIGN.md (Geist body face); the owner asked for the same look as the other TT2 tools, 2026-10-14"
+      },
+      {
+        "rule": "overused-font",
+        "value": "geist mono",
+        "createdAt": "2026-10-14T13:32:57.388Z",
+        "reason": "Family base pinned by ../tt2_hub/DESIGN.md (Geist Mono for counts); the owner asked for the same look as the other TT2 tools, 2026-10-14"
+      }
+    ]
+  }
+}

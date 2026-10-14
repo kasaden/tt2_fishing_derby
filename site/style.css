@@ -410,16 +410,6 @@ input[type="number"][aria-invalid="true"] {
   margin-right: var(--s-sm);
   border-radius: 50%;
   background: var(--gold);
-  animation: pulse 1.2s var(--ease) infinite alternate;
-}
-
-@keyframes pulse {
-  from {
-    opacity: 0.35;
-  }
-  to {
-    opacity: 1;
-  }
 }
 
 #planView {
