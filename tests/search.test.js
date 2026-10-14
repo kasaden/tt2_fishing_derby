@@ -2,7 +2,7 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { createModel } from "../site/lib/model.js";
 import { initialState, simulate, followOrder } from "../site/lib/simulate.js";
-import { findBestPlan, rolloutPolicy, evaluate } from "../site/lib/search.js";
+import { findBestPlan, rolloutPolicy, evaluate, compareResults, lookaheadOrder } from "../site/lib/search.js";
 import { tinyGame, tinyRules, allAt } from "./fixtures.js";
 
 const settings = { prestigesPerDay: 4, visitsPerDay: 4 };
@@ -19,7 +19,7 @@ describe("findBestPlan", () => {
     const plan = findBestPlan(m, s);
     assert.equal(plan.finalLength, 66);
     assert.deepEqual(plan.next, { upgradeId: "FishingHook", fromLevel: 1, toLevel: 2, cost: 0, hour: 0, lengthAtPurchase: 0,
-      affordable: true, missingCoins: 0, alternative: { upgradeId: null, finalLength: 44 } });
+      affordable: true, missingCoins: 0, alternative: { upgradeId: null, finalLength: 44, coinsLeft: 22, purchaseCount: 0, firstCost: 0 } });
   });
   it("saves up for the hook and never recommends a purchase that adds no length", () => {
     const [m, s] = setup(costsOnly({ FishingHook: [30, 1000, 1000], LuresPerDay: [1, 1, 1] }), { coins: 10, hoursLeft: 24 });
@@ -27,7 +27,7 @@ describe("findBestPlan", () => {
     assert.equal(plan.finalLength, 80);
     assert.deepEqual(plan.order, ["FishingHook"]);
     assert.deepEqual(plan.next, { upgradeId: "FishingHook", fromLevel: 1, toLevel: 2, cost: 30, hour: 12, lengthAtPurchase: 44,
-      affordable: false, missingCoins: 20, alternative: { upgradeId: "LuresPerDay", finalLength: 80 } });
+      affordable: false, missingCoins: 20, alternative: { upgradeId: "LuresPerDay", finalLength: 80, coinsLeft: plan.coinsLeft - 1, purchaseCount: 2, firstCost: 1 } });
   });
   it("recommends nothing when the event is over", () => {
     const [m, s] = setup({}, { coins: 100, lures: 0, hoursLeft: 0, lengthSoFar: 7 });
@@ -56,6 +56,48 @@ describe("findBestPlan", () => {
     let t = 0;
     const late = findBestPlan(m, s, { deadline: 0, now: () => ++t });
     assert.ok(late.finalLength >= evaluate(m, s, []).finalLength);
+  });
+});
+
+describe("compareResults", () => {
+  const result = (finalLength, coinsLeft, purchases) => ({ finalLength, coinsLeft, purchases });
+  const buy = (upgradeId, cost) => ({ upgradeId, cost });
+  it("ranks by length, then fewer purchases, then coins left, then the cheaper first purchase, then UPGRADE_IDS order", () => {
+    assert.ok(compareResults(result(10, 0, [buy("FishingHook", 5)]), result(9, 100, [])) > 0);
+    assert.ok(compareResults(result(10, 0, []), result(10, 100, [buy("FishingBait", 1)])) > 0);
+    assert.ok(compareResults(result(10, 50, [buy("FishingHook", 5)]), result(10, 20, [buy("FishingHook", 5)])) > 0);
+    assert.ok(compareResults(result(10, 50, [buy("FishingSkill", 1)]), result(10, 50, [buy("LuresPerPrestige", 5)])) > 0);
+    assert.ok(compareResults(result(10, 50, [buy("LuresPerPrestige", 5)]), result(10, 50, [buy("FishingHook", 5)])) > 0);
+    assert.ok(compareResults(result(10 + 1e-12, 0, []), result(10, 1, [])) < 0); // a length difference under EPS is a tie
+  });
+});
+
+describe("purchases that add no length", () => {
+  it("are never in the plan, even when they leave more coins at the end", () => {
+    // one visit left (interval 12 h, 6 h left): a free Tacklebox Speed and a 1-coin bait add no length but more coins
+    const costs = { LuresPerPrestige: [2, 3, 50], LuresPerDay: [30, 1000, 1000], FishingHook: [10, 20, 40], FishingSkill: [10, 20, 40], FishingBait: [1, 1, 1], TackleBoxSpeed: [0, 1000, 1000], TackleBoxSize: [5, 10, 20] };
+    const m = createModel(tinyGame(costs), tinyRules(), { prestigesPerDay: 4, visitsPerDay: 2 });
+    const plan = findBestPlan(m, initialState(m, { levels: allAt(1), coins: 1, lures: 18, hoursLeft: 6, lengthSoFar: 0 }));
+    assert.deepEqual(plan.order, []);
+    assert.equal(plan.next, null);
+  });
+  it("are never kept by the lookahead", () => {
+    const [m, s] = setup(costsOnly({ FishingHook: [30, 1000, 1000], LuresPerDay: [1, 1, 1] }), { coins: 10, hoursLeft: 24 });
+    assert.deepEqual(lookaheadOrder(m, s), ["FishingHook"]);
+  });
+});
+
+describe("progress", () => {
+  it("publishes only longer plans, and still returns a plan that wins on the tie-break alone", () => {
+    // one visit left: the first plan carries purchases that add nothing, a later method finds the same length with fewer
+    const costs = { LuresPerPrestige: [1, 1, 1], LuresPerDay: [30, 1000, 1000], FishingHook: [1, 1, 1], FishingSkill: [5, 10, 20], FishingBait: [2, 3, 50], TackleBoxSpeed: [1, 1, 1], TackleBoxSize: [10, 20, 40] };
+    const m = createModel(tinyGame(costs), tinyRules(), { prestigesPerDay: 4, visitsPerDay: 2 });
+    const seen = [];
+    const plan = findBestPlan(m, initialState(m, { levels: allAt(1), coins: 38, lures: 21, hoursLeft: 6, lengthSoFar: 0 }), { onProgress: (p) => seen.push(p) });
+    const last = seen.at(-1);
+    assert.equal(last.finalLength, plan.finalLength);
+    assert.ok(plan.order.length < last.order.length, `${plan.order.length} purchases returned, ${last.order.length} published`);
+    seen.forEach((p, i) => i && assert.ok(p.finalLength > seen[i - 1].finalLength));
   });
 });
 

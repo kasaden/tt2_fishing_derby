@@ -8,6 +8,8 @@ import { formatLength, formatPurchaseTime, upgradeLabel, whyLine, formatReward, 
 
 const $ = (id) => document.getElementById(id);
 const RECALC_DELAY_MS = 150;
+const MAX_HOURS_LEFT = 30 * 24; // input sanity bounds, not game values: they keep a typo from freezing the search
+const ZERO_WHEN_EMPTY = new Set(["coins", "lures", "lengthSoFar"]);
 const PLAN_ROWS_SHOWN = 10;
 
 const FIELD_LABELS = {
@@ -47,11 +49,17 @@ const ICON_PLUS = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h10M
 const numberOrNull = (el) => (el.value.trim() === "" || Number.isNaN(el.valueAsNumber) || el.valueAsNumber < 0 ? null : el.valueAsNumber);
 const numberOrZero = (el) => Math.max(0, numberOrNull(el) ?? 0);
 
+// a number within the field's max (when it has one)
+const bounded = (el) => {
+  const value = numberOrNull(el);
+  return value === null || el.max === "" ? value : Math.min(value, Number(el.max));
+};
+
 function readTimeLeft() {
   const days = numberOrNull($("daysLeft"));
   const hours = numberOrNull($("hoursPart"));
   if (days === null && hours === null) return null;
-  return Math.max(0, (days ?? 0) * 24 + (hours ?? 0));
+  return Math.min(MAX_HOURS_LEFT, (days ?? 0) * 24 + (hours ?? 0));
 }
 
 // A value the game shows is kept with the level it was read at; only a new value takes the current level.
@@ -77,7 +85,7 @@ function readForm() {
     lengthSoFar: numberOrZero($("lengthSoFar")),
     hoursLeft: readTimeLeft(),
     prestigesPerDay: numberOrNull($("prestigesPerDay")),
-    visitsPerDay: numberOrNull($("visitsPerDay")),
+    visitsPerDay: bounded($("visitsPerDay")),
     shown: {
       dailyCap: reading(input.shown.dailyCap, $("shownDailyCap"), "LuresPerDay"),
       tackleboxCapacity: reading(input.shown.tackleboxCapacity, $("shownTackleboxCapacity"), "TackleBoxSize")
@@ -244,7 +252,7 @@ function renderPlan(plan) {
           ? "Fish the lures you have now first: they bring the coins it needs."
           : `At your pace you will have them around ${formatPurchaseTime(now, next.hour)}.`;
     }
-    $("nextWhy").textContent = whyLine({ ...next, finalLength: plan.finalLength }, rules, unit);
+    $("nextWhy").textContent = whyLine({ ...next, finalLength: plan.finalLength, coinsLeft: plan.coinsLeft, purchaseCount: plan.purchases.length }, rules, unit);
     card.classList.remove("is-updated");
     void card.offsetWidth; // restart the settle animation
     card.classList.add("is-updated");
@@ -332,6 +340,7 @@ function startWorker() {
   worker.onmessage = onWorkerMessage;
   worker.onerror = (event) => {
     running = false;
+    worker = null; // a worker that failed to load is not reused: the next request starts a fresh one
     showPlanError(event.message || "The planning worker stopped.");
   };
 }
@@ -416,6 +425,17 @@ async function start() {
 
   $("inputs").addEventListener("input", (event) => {
     if (event.target.id.startsWith("level-")) return; // handled by its row
+    readForm();
+    changed();
+  });
+  // once the player leaves a field, show the value the tool uses: no negative counts, nothing over the field's max
+  $("inputs").addEventListener("change", (event) => {
+    const el = event.target;
+    if (!(el instanceof HTMLInputElement) || el.type !== "number" || el.id.startsWith("level-")) return;
+    if (el.value.trim() === "" || Number.isNaN(el.valueAsNumber)) return;
+    if (el.valueAsNumber < 0) el.value = ZERO_WHEN_EMPTY.has(el.id) ? "0" : "";
+    else if (el.max !== "" && el.valueAsNumber > Number(el.max)) el.value = el.max;
+    else return;
     readForm();
     changed();
   });

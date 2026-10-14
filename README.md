@@ -10,11 +10,11 @@ Which Fishing Derby upgrade to buy next in Tap Titans 2, and the whole purchase 
 
 You enter what the game shows: each upgrade's level, your Fishing Coins, the lures in stock, the time left, the length caught so far, and how you play (prestiges and visits per day). The tool then:
 
-1. simulates the rest of the event visit by visit, in expected values (average catches, sizes and coins);
+1. simulates the rest of the event visit by visit, in expected values (average catches, sizes and coins); above 12 visits a day, purchases and catches are decided in 2-hour steps while the Tacklebox still fills visit by visit;
 2. searches purchase orders with three methods (a three-purchase lookahead, a beam of 30 partial plans, and an improvement pass that removes, inserts or moves one purchase) in a Web Worker for about two seconds, and keeps the best plan found;
 3. shows the next purchase ("Buy now" or "Save up"), why, the estimated final length with the solo reward tiers it reaches, and the plan to the end.
 
-The plan is the best found, not a proof, and the estimate rests on the rules below.
+Between two plans of the same length it prefers fewer purchases, then more coins left: a purchase that adds no length is never recommended. The plan is the best found, not a proof, and the estimate rests on the rules below.
 
 ## Rules
 
@@ -50,13 +50,15 @@ Start: every upgrade at its minimum level, 0 coins, 20 lures, 0 length. Portfoli
 
 | Case | First plan (lookahead 1) | Lookahead 3 | Beam 30 | Improved lookahead 3 | Portfolio within deadline |
 | --- | --- | --- | --- | --- | --- |
-| 72 h, 10 prestiges and 6 visits a day | 8,426 in 36 ms | 8,873 in 756 ms | 13,310 in 577 ms | 9,105 in 807 ms | 13,554 in 2,005 ms |
-| 168 h, 10 prestiges and 6 visits a day | 44,217 in 77 ms | 45,933 in 2,399 ms | 46,105 in 1,220 ms | 47,435 in 5,296 ms | 46,878 in 2,001 ms |
-| 168 h, 20 prestiges and 12 visits a day | 58,890 in 62 ms | 61,189 in 4,310 ms | 60,567 in 2,169 ms | 62,324 in 3,736 ms | 60,640 in 2,002 ms |
+| 72 h, 10 prestiges and 6 visits a day | 8,426 in 38 ms | 8,873 in 758 ms | 13,310 in 475 ms | 9,049 in 249 ms | 13,609 in 1,776 ms |
+| 168 h, 10 prestiges and 6 visits a day | 44,217 in 120 ms | 45,933 in 2,170 ms | 46,105 in 1,169 ms | 47,439 in 2,022 ms | 46,837 in 2,002 ms |
+| 168 h, 20 prestiges and 12 visits a day | 58,890 in 72 ms | 61,189 in 3,399 ms | 60,567 in 1,963 ms | 62,464 in 2,078 ms | 60,567 in 2,001 ms |
 
-The single-method columns run without a deadline. Within its 2-second deadline the portfolio beats every method that finishes in that time; methods given 3.7 to 5.3 seconds still find up to 2.7 % more on the 168-hour cases.
+The single-method columns run without a deadline. When the deadline cuts a method short, where it stops varies from run to run, so the portfolio column moves by about 1 % between runs; methods given more than 2 seconds still find up to 3 % more on the 168-hour cases.
 
-In the page (headless Chrome, the 72-hour case above): the first plan is on screen 138 to 145 ms after navigation and the best plan after 2.0 to 2.1 s; with the CPU throttled 4× (a rough stand-in for a phone), 380 to 420 ms and 2.2 to 2.4 s, with the same final length, 13,554.
+In the page (headless Chrome, the 72-hour case): the first plan is on screen about 140 ms after navigation and the best plan after about 2 s.
+
+**Slower devices.** Chrome's 4× CPU throttling left the page's result unchanged, but it very likely does not slow the Web Worker that runs the search, so it says nothing about a phone. The same search given a quarter of the time (500 ms, a device about four times slower) reaches 8,426 instead of 13,609 on the 72-hour case: on a slow phone the 2-second search can stop at a clearly weaker plan. Searching longer on such devices is an open decision.
 
 ## Publishing
 

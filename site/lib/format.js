@@ -19,13 +19,32 @@ export function upgradeLabel(rules, id) {
   return rules.names[id] ?? `${id} (name not verified)`;
 }
 
-/** Why the next purchase: its estimated final length against the best plan that starts otherwise. */
+/**
+ * Why the next purchase: its estimated final length against the best plan that starts otherwise. When both lengths
+ * read the same, say what decides (the plan's own tie-break: fewer purchases, more coins left, a cheaper first purchase).
+ * next = the plan's next purchase with the plan's finalLength, coinsLeft and purchaseCount.
+ */
 export function whyLine(next, rules, unit) {
-  const mine = `Estimated final length with this purchase: ${formatLength(next.finalLength, unit)}.`;
-  const { upgradeId, finalLength } = next.alternative;
-  return upgradeId
-    ? `${mine} Best other first purchase, ${upgradeLabel(rules, upgradeId)}: ${formatLength(finalLength, unit)}.`
-    : `${mine} Buying nothing: ${formatLength(finalLength, unit)}.`;
+  const alt = next.alternative;
+  const mine = formatLength(next.finalLength, unit);
+  const theirs = formatLength(alt.finalLength, unit);
+  if (mine !== theirs) {
+    return alt.upgradeId
+      ? `Estimated final length with this purchase: ${mine}. Best other first purchase, ${upgradeLabel(rules, alt.upgradeId)}: ${theirs}.`
+      : `Estimated final length with this purchase: ${mine}. Buying nothing: ${theirs}.`;
+  }
+  const other = alt.upgradeId ? `starting with ${upgradeLabel(rules, alt.upgradeId)}` : "buying nothing";
+  let reason;
+  if (Math.abs(next.finalLength - alt.finalLength) > 1e-9) reason = "It is slightly longer before rounding.";
+  else if (next.purchaseCount < alt.purchaseCount) {
+    const fewer = alt.purchaseCount - next.purchaseCount;
+    reason = `This one needs ${fewer} ${fewer === 1 ? "purchase" : "purchases"} fewer.`;
+  } else if (next.coinsLeft > alt.coinsLeft + 1e-9) {
+    const [count, noun] = formatCoins(next.coinsLeft - alt.coinsLeft).split(" ");
+    reason = `This one leaves ${count} more ${noun} at the end.`;
+  } else if (next.cost < alt.firstCost) reason = "Its first purchase costs less.";
+  else reason = "Either order works.";
+  return `Estimated final length with this purchase: ${mine}, the same as ${other}. ${reason}`;
 }
 
 /** A whole number of coins, rounded up (a fraction still has to be earned), in the singular or the plural. */

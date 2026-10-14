@@ -17,12 +17,14 @@ export function evaluate(model, state, order) {
 }
 
 /**
- * Positive when result `a` is better than `b`: longer final length, then more coins left,
- * then a cheaper first purchase, then the first purchase earlier in UPGRADE_IDS (no purchase: cost 0, index −1).
+ * Positive when result `a` is better than `b`: longer final length, then fewer purchases (a purchase that adds no
+ * length is never worth recommending, even when it leaves more coins), then more coins left, then a cheaper first
+ * purchase, then the first purchase earlier in UPGRADE_IDS (no purchase: cost 0, index −1).
  */
 export function compareResults(a, b) {
   const length = a.finalLength - b.finalLength;
   if (Math.abs(length) > EPS) return length;
+  if (a.purchases.length !== b.purchases.length) return b.purchases.length - a.purchases.length;
   const coins = a.coinsLeft - b.coinsLeft;
   if (Math.abs(coins) > EPS) return coins;
   const fa = a.purchases[0];
@@ -203,6 +205,17 @@ export function improveOrder(model, state, order, { deadline = Infinity, now = D
   }
 }
 
+/** What the page needs to compare the next purchase with its alternative (length, then what breaks a tie). */
+function summary(upgradeId, result) {
+  return {
+    upgradeId,
+    finalLength: result.finalLength,
+    coinsLeft: result.coinsLeft,
+    purchaseCount: result.purchases.length,
+    firstCost: result.purchases.length ? result.purchases[0].cost : 0
+  };
+}
+
 /** Describes the plan an order gives: the purchases actually made, the final result, and the next purchase with its best alternative. */
 export function describePlan(model, state, order) {
   const result = evaluate(model, state, order);
@@ -222,9 +235,7 @@ export function describePlan(model, state, order) {
       ...first,
       affordable: first.cost <= state.coins,
       missingCoins: Math.max(0, first.cost - state.coins),
-      alternative: alternative
-        ? { upgradeId: alternative.upgradeId, finalLength: alternative.result.finalLength }
-        : { upgradeId: null, finalLength: evaluate(model, state, []).finalLength }
+      alternative: summary(alternative ? alternative.upgradeId : null, alternative ? alternative.result : evaluate(model, state, []))
     };
   }
   return { order: made, purchases: result.purchases, finalLength: result.finalLength, coinsLeft: result.coinsLeft, next };

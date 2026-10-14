@@ -50,6 +50,14 @@ describe("followOrder and advance", () => {
     assert.equal(a.state.coins, 2);
     assert.equal(simulate(m, a.state, none).finalLength, 66);
   });
+  it("can be reused for runs from different starting levels", () => {
+    const m = model();
+    const policy = followOrder(["FishingHook", "FishingSkill"], null, allAt(1));
+    simulate(m, start(m, { coins: 100 }), policy);
+    // second run: the Skill target is already reached at the start, the Hook one is not
+    const second = simulate(m, start(m, { coins: 100, levels: { ...allAt(1), FishingSkill: 2 } }), policy);
+    assert.deepEqual(second.purchases.map((p) => `${p.upgradeId} ${p.fromLevel}→${p.toLevel}`), ["FishingHook 1→2"]);
+  });
   it("returns null when the order cannot be completed", () => {
     const m = model();
     assert.equal(advance(m, start(m, { hoursLeft: 0, lures: 0 }), ["FishingHook"]), null);

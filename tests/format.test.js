@@ -18,9 +18,18 @@ it("labels upgrades, flagging a name not verified", () => {
   assert.equal(upgradeLabel(rules, "FishingBait"), "FishingBait (name not verified)");
 });
 it("explains the next purchase against the best alternative", () => {
-  const next = { upgradeId: "FishingHook", alternative: { upgradeId: "LuresPerDay", finalLength: 80 } };
-  assert.equal(whyLine({ ...next, finalLength: 80 }, rules, null), "Estimated final length with this purchase: 80. Best other first purchase, Bucket: 80.");
-  assert.equal(whyLine({ ...next, finalLength: 66, alternative: { upgradeId: null, finalLength: 44 } }, rules, null), "Estimated final length with this purchase: 66. Buying nothing: 44.");
+  const next = { upgradeId: "FishingHook", finalLength: 90, coinsLeft: 10, purchaseCount: 1, alternative: { upgradeId: "LuresPerDay", finalLength: 80, coinsLeft: 9, purchaseCount: 2, firstCost: 1 } };
+  assert.equal(whyLine(next, rules, null), "Estimated final length with this purchase: 90. Best other first purchase, Bucket: 80.");
+  assert.equal(whyLine({ ...next, finalLength: 66, alternative: { upgradeId: null, finalLength: 44, coinsLeft: 22, purchaseCount: 0, firstCost: 0 } }, rules, null), "Estimated final length with this purchase: 66. Buying nothing: 44.");
+});
+it("says what decides between two first purchases that end at the same length", () => {
+  const tie = { upgradeId: "FishingHook", cost: 30, finalLength: 80, coinsLeft: 10, purchaseCount: 1 };
+  const alt = { upgradeId: "LuresPerDay", finalLength: 80, coinsLeft: 9, purchaseCount: 2, firstCost: 1 };
+  assert.equal(whyLine({ ...tie, alternative: alt }, rules, null), "Estimated final length with this purchase: 80, the same as starting with Bucket. This one needs 1 purchase fewer.");
+  assert.equal(whyLine({ ...tie, alternative: { ...alt, purchaseCount: 1, coinsLeft: 8 } }, rules, null), "Estimated final length with this purchase: 80, the same as starting with Bucket. This one leaves 2 more coins at the end.");
+  assert.equal(whyLine({ ...tie, cost: 1, alternative: { ...alt, purchaseCount: 1, coinsLeft: 10, firstCost: 5 } }, rules, null), "Estimated final length with this purchase: 80, the same as starting with Bucket. Its first purchase costs less.");
+  assert.equal(whyLine({ ...tie, cost: 5, alternative: { ...alt, purchaseCount: 1, coinsLeft: 10, firstCost: 5 } }, rules, null), "Estimated final length with this purchase: 80, the same as starting with Bucket. Either order works.");
+  assert.equal(whyLine({ ...tie, finalLength: 80.3, alternative: { ...alt, finalLength: 79.9 } }, rules, null), "Estimated final length with this purchase: 80, the same as starting with Bucket. It is slightly longer before rounding.");
 });
 it("writes a reward string from the game data as name and quantity", () => {
   assert.equal(formatReward("Diamonds:200"), "Diamonds × 200");

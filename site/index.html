@@ -58,15 +58,15 @@
             <span id="timeLeftLabel" class="label">Time left in the event</span>
             <div class="pair">
               <div class="unit">
-                <input id="daysLeft" name="daysLeft" type="number" inputmode="numeric" min="0" step="1" autocomplete="off" aria-labelledby="timeLeftLabel daysUnit" />
+                <input id="daysLeft" name="daysLeft" type="number" inputmode="numeric" min="0" max="30" step="1" autocomplete="off" aria-labelledby="timeLeftLabel daysUnit" aria-describedby="timeLeftHint" />
                 <label id="daysUnit" for="daysLeft">days</label>
               </div>
               <div class="unit">
-                <input id="hoursPart" name="hoursPart" type="number" inputmode="numeric" min="0" step="1" autocomplete="off" aria-labelledby="timeLeftLabel hoursUnit" />
+                <input id="hoursPart" name="hoursPart" type="number" inputmode="numeric" min="0" max="720" step="1" autocomplete="off" aria-labelledby="timeLeftLabel hoursUnit" aria-describedby="timeLeftHint" />
                 <label id="hoursUnit" for="hoursPart">hours</label>
               </div>
             </div>
-            <p id="timeLeftHint" class="hint">From the event's countdown.</p>
+            <p id="timeLeftHint" class="hint">From the event's countdown, up to 30 days.</p>
           </div>
         </div>
       </fieldset>
@@ -80,8 +80,8 @@
           </div>
           <div class="field">
             <label for="visitsPerDay">Visits per day</label>
-            <input id="visitsPerDay" name="visitsPerDay" type="number" inputmode="decimal" min="0" step="any" autocomplete="off" aria-describedby="visitsHint" />
-            <p id="visitsHint" class="hint">Times you open the game and fish.</p>
+            <input id="visitsPerDay" name="visitsPerDay" type="number" inputmode="decimal" min="0" max="48" step="any" autocomplete="off" aria-describedby="visitsHint" />
+            <p id="visitsHint" class="hint">Times you open the game and fish, up to 48.</p>
           </div>
         </div>
       </fieldset>

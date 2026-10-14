@@ -27,15 +27,19 @@ function targetsFrom(order, base) {
 /**
  * A policy that buys the items of `order` in sequence (each item is the next level of that id), waiting while
  * the next one is unaffordable, then hands over to `then`. The items count from `base`, or, when `base` is not
- * given, from the levels of the first view the policy sees; build one policy per starting state.
+ * given, from the levels of the first view the policy sees. The policy can serve several runs.
  */
 export function followOrder(order, then = null, base = null) {
   let targets = base ? targetsFrom(order, base) : null;
-  let reached = 0; // targets are reached in order, so the scan resumes where it stopped
+  let reached = 0; // within one run levels only grow, so the scan resumes where it stopped
+  let lastRun = null;
   return (view) => {
     if (!targets) targets = targetsFrom(order, view.levels);
-    // A view below an already reached target means a new run from an earlier state: scan from the start again.
-    if (reached > 0 && view.levels[targets[reached - 1][0]] < targets[reached - 1][1]) reached = 0;
+    // a new run (or a view built outside a run) starts the scan again
+    if (view.run === undefined || view.run !== lastRun) {
+      reached = 0;
+      lastRun = view.run;
+    }
     while (reached < targets.length && view.levels[targets[reached][0]] >= targets[reached][1]) reached += 1;
     if (reached < targets.length) return targets[reached][0];
     return then ? then(view) : null;
@@ -46,6 +50,7 @@ export function followOrder(order, then = null, base = null) {
 function run(model, start, policy, stopAfter = Infinity) {
   const s = { ...start, levels: { ...start.levels } };
   const purchases = [];
+  const runToken = {}; // tells a policy that serves several runs which run it is in
   const { luresPerCatch } = model.rules;
 
   // Returns true when the run must stop right here, after its last allowed purchase.
@@ -53,7 +58,7 @@ function run(model, start, policy, stopAfter = Infinity) {
     const hour = s.visit * model.interval;
     for (;;) {
       if (purchases.length >= stopAfter) return true;
-      const id = policy({ levels: s.levels, coins: s.coins, hour });
+      const id = policy({ levels: s.levels, coins: s.coins, hour, run: runToken });
       if (!id) return false;
       const cost = model.cost(id, s.levels[id]);
       if (cost === null || cost > s.coins) return false;

@@ -3,6 +3,9 @@
 import { UPGRADE_IDS } from "./gameData.js";
 import { RulesError, levelRange, upgradeValue, upgradeCost, missingBases } from "./rules.js";
 
+/** The most decision steps a day the simulation takes; more visits are grouped into steps. */
+export const MAX_STEPS_PER_DAY = 12;
+
 /** One table entry per level of an upgrade, indexed by level − min. */
 function perLevel(game, rules, id, fn) {
   const { min, max } = levelRange(game, rules, id);
@@ -22,7 +25,13 @@ export function createModel(game, rules, settings) {
   const missing = missingBases(rules);
   if (missing.length) throw new RulesError(`rules.json: missing base: ${missing[0]}`);
 
-  const interval = 24 / visitsPerDay;
+  // Beyond MAX_STEPS_PER_DAY visits, purchases and catches are decided in steps of several visits (each step's
+  // Tacklebox still fills visit by visit): a simulation's cost grows with its steps, and 48 visits a day left the
+  // 2-second search with a third of the length a plan could reach.
+  const steps = Math.min(visitsPerDay, MAX_STEPS_PER_DAY);
+  const interval = 24 / steps;
+  const visitInterval = 24 / visitsPerDay;
+  const visitsPerStep = visitsPerDay / steps;
   const value = (id, level) => upgradeValue(game, rules, id, level);
   const at = ({ min, table }, level) => table[level - min];
 
@@ -61,8 +70,8 @@ export function createModel(game, rules, settings) {
     luresPerVisit: (levels) => {
       const capacity = at(capacityTable, levels.TackleBoxSize);
       const minutes = at(minutesTable, levels.TackleBoxSpeed);
-      const tacklebox = minutes > 0 ? Math.min(capacity, (interval * 60) / minutes) : capacity;
-      return at(prestigeTable, levels.LuresPerPrestige) + tacklebox;
+      const perVisit = minutes > 0 ? Math.min(capacity, (visitInterval * 60) / minutes) : capacity;
+      return at(prestigeTable, levels.LuresPerPrestige) + visitsPerStep * perVisit;
     },
     dailyCap: (levels) => at(capTable, levels.LuresPerDay)
   };

@@ -22,7 +22,7 @@
 - Every rule is shown in the UI with its status, `Verified` or `Assumed`.
 - Lengths are shown without a unit while `sizeUnit` is `null`.
 - Engine constants in `site/lib/search.js`: `LOOKAHEAD_DEPTH = 3`, `BEAM_WIDTH = 30`, `DEADLINE_MS = 2000`, `EPS = 1e-9`. Quality threshold in tests: the engine's plan reaches at least `0.99` of the best exhaustive order.
-- Plan comparison order, everywhere: higher final length (difference > `EPS`), then more coins left, then lower cost of the first purchase, then the first purchase's index in `UPGRADE_IDS`.
+- Plan comparison order, everywhere: higher final length (difference > `EPS`), then fewer purchases (added 2026-10-14 after the review), then more coins left, then lower cost of the first purchase, then the first purchase's index in `UPGRADE_IDS`.
 - A visit is, in order: collect lures (not at visit 0), buy, fish, buy. Visits are `24 / visitsPerDay` hours apart; visit 0 is now; the last visit is at `floor(hoursLeft / interval)` intervals. The daily limit counts catches in 24-hour blocks from now (`day = floor(hour / 24)`).
 - Storage key `tt2-fishing-derby:input:v1`; every `localStorage` access is in `try`/`catch` and the page works without storage.
 - Footer text, exact: "Unofficial. Tap Titans 2 is a trademark of Game Hive Corp. This site is not affiliated with or endorsed by Game Hive." Licence MIT, © 2026 kasaden.
@@ -33,7 +33,7 @@
 
 1. **A typed level outside the upgrade's range** (`12` on an 11-level upgrade, `-2`, `2.7`, text): clamped into range, the plan still computed. Test: Task 7, "falls back field by field".
 2. **A required player value missing** (hours left, prestiges per day, visits per day, a shown base the rules need): no plan, one message naming each missing value. Tests: Task 7 `missingFields`, Task 8 "posts the missing fields".
-3. **Saved data from another version, corrupt, or naming an unknown upgrade**: valid fields kept, invalid ones reset, never a full wipe of valid data. Test: Task 7.
+3. **Saved data that is corrupt in places or names an unknown upgrade**: valid fields kept, invalid ones reset, never a full wipe of valid data; a save in another storage version falls back to the defaults (Task 7 interface). Test: Task 7.
 4. **A cheap purchase that adds no length, tied with the useful one**: never recommended, never in the plan. Test: Task 5, "saves up for the hook".
 5. **Fewer hours left than one visit interval**: only the current visit counts; a purchase is recommended only if it adds length before the end. Test: Task 5, "with less than one visit left".
 

@@ -22,6 +22,12 @@ describe("createModel on the tiny data", () => {
     assert.equal(m.luresPerVisit(allAt(1)), 6);
     assert.equal(m.dailyCap(allAt(1)), 100);
   });
+  it("groups many visits into at most 12 steps a day, keeping each visit's Tacklebox", () => {
+    const m = createModel(tinyGame(), tinyRules(), { prestigesPerDay: 4, visitsPerDay: 48 });
+    assert.equal(m.interval, 2);
+    // a 2-hour step holds 4 visits of 30 minutes: prestige lures 4 × 2/24 × 2, Tacklebox 4 × min(4, 30 / 60)
+    assert.ok(Math.abs(m.luresPerVisit(allAt(1)) - (2 / 3 + 2)) < 1e-12, String(m.luresPerVisit(allAt(1))));
+  });
   it("fills the Tacklebox at every visit when its speed is 0", () => {
     const g = tinyGame(); g.upgrades.TackleBoxSpeed.values = [60, 30, 0];
     const z = createModel(g, tinyRules(), settings);

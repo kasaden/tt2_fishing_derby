@@ -138,9 +138,11 @@ Avec les règles de départ :
 
 Les quantités sont fractionnaires (ce sont des moyennes). Le moment d'un achat dans le plan est donc approximatif, et l'interface le dit.
 
+Au-delà de 12 visites par jour, les achats et les prises se décident par pas de 2 heures, la Tacklebox se remplissant toujours visite par visite (révision du 14 octobre 2026 après la relecture : avec 48 visites par jour, la recherche en 2 s ne trouvait qu'un tiers de la longueur atteignable, le coût d'une simulation croissant avec le nombre de pas).
+
 ### 8.2 Choix des achats (révisé le 14 octobre 2026 après prototype)
 
-Un plan est un **ordre d'achats** : chaque achat est le niveau suivant d'une amélioration, fait dès que les coins le permettent. Tous les plans sont évalués par la même simulation (§ 8.1), qui rend leur longueur finale estimée. Le moteur essaie plusieurs méthodes et garde le meilleur plan trouvé (à longueur égale : celui qui laisse le plus de coins, puis le moins cher en premier achat) :
+Un plan est un **ordre d'achats** : chaque achat est le niveau suivant d'une amélioration, fait dès que les coins le permettent. Tous les plans sont évalués par la même simulation (§ 8.1), qui rend leur longueur finale estimée. Le moteur essaie plusieurs méthodes et garde le meilleur plan trouvé (à longueur égale : celui qui compte le moins d'achats, puis qui laisse le plus de coins, puis le moins cher en premier achat ; révision du 14 octobre 2026 : départager d'abord par les coins faisait recommander, en fin d'événement, des achats qui n'ajoutent aucune longueur) :
 
 1. **Regard d'avance** : à chaque décision, toutes les suites de 1 à 3 prochains achats sont simulées, suivies d'une politique simple (acheter l'amélioration abordable qui augmente le plus la longueur gagnée par heure, par coin). Le premier achat de la meilleure suite rejoint le plan. Un achat qui n'ajoute aucune longueur n'est jamais retenu.
 2. **Faisceau** : à chaque étape, les 30 meilleurs débuts de plan sont gardés (jugés par la même politique simple après eux) et prolongés de chaque achat possible ; deux débuts qui mènent aux mêmes niveaux ne comptent qu'une fois.
