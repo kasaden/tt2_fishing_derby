@@ -18,8 +18,10 @@ it("posts progress then the final plan", () => {
 });
 it("uses the shown values when the rules have no base", () => {
   const game = realGame();
-  const out = collect({ game, rules: realRules(game), input: { ...complete, shown: { dailyCap: 100, tackleboxCapacity: 10 } } });
+  const out = collect({ game, rules: realRules(game), input: { ...complete, shown: { dailyCap: { value: 100, level: 1 }, tackleboxCapacity: { value: 10, level: 1 } } } });
   assert.equal(out.at(-1).type, "done");
+  const { finalLength } = out.at(-1).plan;
+  assert.ok(Number.isFinite(finalLength) && finalLength > 0, `final length ${finalLength}`);
 });
 it("reports an engine error as a message", () => {
   const out = collect({ game: tinyGame(), rules: tinyRules(), input: { ...complete, visitsPerDay: -1 } });

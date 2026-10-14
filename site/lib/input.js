@@ -27,6 +27,15 @@ function level(game, rules, id, value) {
   return Math.min(max, Math.max(min, Math.floor(value)));
 }
 
+/** A value the game showed, with the level of its upgrade when it was read; anything else is no reading. */
+function reading(game, rules, upgradeId, saved) {
+  if (!saved || typeof saved !== "object") return null;
+  const { min, max } = levelRange(game, rules, upgradeId);
+  const value = amount(saved.value, null);
+  if (value === null || !Number.isInteger(saved.level) || saved.level < min || saved.level > max) return null;
+  return { value, level: saved.level };
+}
+
 /**
  * Reads saved input field by field: a bad field takes its default, the others are kept.
  * Nothing saved, unreadable JSON or another version: all defaults.
@@ -50,7 +59,7 @@ export function readInput(raw, game, rules) {
     lengthSoFar: amount(saved.lengthSoFar, defaults.lengthSoFar),
     prestigesPerDay: amount(saved.prestigesPerDay, defaults.prestigesPerDay),
     visitsPerDay: amount(saved.visitsPerDay, defaults.visitsPerDay),
-    shown: { dailyCap: amount(shown.dailyCap, null), tackleboxCapacity: amount(shown.tackleboxCapacity, null) }
+    shown: { dailyCap: reading(game, rules, "LuresPerDay", shown.dailyCap), tackleboxCapacity: reading(game, rules, "TackleBoxSize", shown.tackleboxCapacity) }
   };
 }
 

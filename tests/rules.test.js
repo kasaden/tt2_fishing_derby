@@ -57,11 +57,16 @@ describe("loadRules errors", () => {
 
 describe("withShownValues", () => {
   const rules = loadRules(json(), game);
-  it("derives each base from the value shown at the player's level", () => {
-    const r = withShownValues(rules, game, { ...levelsAt(1), LuresPerDay: 2 }, { dailyCap: 140, tackleboxCapacity: 25 });
+  it("derives each base from the value shown at the level it was read at", () => {
+    const r = withShownValues(rules, game, { dailyCap: { value: 140, level: 2 }, tackleboxCapacity: { value: 25, level: 1 } });
     assert.equal(r.dailyCapBase, 40);
     assert.equal(r.tackleboxBaseCapacity, 25);
   });
-  it("refuses a shown value below the level's bonus", () =>
-    assert.throws(() => withShownValues(rules, game, { ...levelsAt(1), LuresPerDay: 3 }, { dailyCap: 150, tackleboxCapacity: 25 }), /shown daily limit .* lower than/));
+  it("keeps the base when the upgrade is raised after the reading", () => {
+    // read at Bucket level 1; the player then buys levels 2 and 3: the reading still says level 1
+    const r = withShownValues(rules, game, { dailyCap: { value: 100, level: 1 }, tackleboxCapacity: { value: 10, level: 1 } });
+    assert.equal(r.dailyCapBase, 100);
+  });
+  it("refuses a shown value below the level's bonus, naming the upgrade as the game does", () =>
+    assert.throws(() => withShownValues(rules, game, { dailyCap: { value: 150, level: 3 }, tackleboxCapacity: null }), /shown daily limit \(150\) is lower than the Bucket bonus at level 3 \(200\)/));
 });

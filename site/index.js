@@ -54,7 +54,22 @@ function readTimeLeft() {
   return Math.max(0, (days ?? 0) * 24 + (hours ?? 0));
 }
 
+// A value the game shows is kept with the level it was read at; only a new value takes the current level.
+function reading(previous, el, upgradeId) {
+  const value = numberOrNull(el);
+  if (value === null) return null;
+  if (previous && previous.value === value) return previous;
+  return { value, level: input.levels[upgradeId] };
+}
+
 function readForm() {
+  for (const id of UPGRADE_IDS) {
+    const el = $(`level-${id}`);
+    if (!el) continue;
+    const { min, max } = levelRange(game, rules, id);
+    const typed = numberOrNull(el);
+    input.levels[id] = typed === null ? min : Math.min(max, Math.max(min, Math.floor(typed)));
+  }
   input = {
     ...input,
     coins: numberOrZero($("coins")),
@@ -63,15 +78,19 @@ function readForm() {
     hoursLeft: readTimeLeft(),
     prestigesPerDay: numberOrNull($("prestigesPerDay")),
     visitsPerDay: numberOrNull($("visitsPerDay")),
-    shown: { dailyCap: numberOrNull($("shownDailyCap")), tackleboxCapacity: numberOrNull($("shownTackleboxCapacity")) }
+    shown: {
+      dailyCap: reading(input.shown.dailyCap, $("shownDailyCap"), "LuresPerDay"),
+      tackleboxCapacity: reading(input.shown.tackleboxCapacity, $("shownTackleboxCapacity"), "TackleBoxSize")
+    }
   };
-  for (const id of UPGRADE_IDS) {
-    const el = $(`level-${id}`);
-    if (!el) continue;
-    const { min, max } = levelRange(game, rules, id);
-    const typed = numberOrNull(el);
-    input.levels[id] = typed === null ? min : Math.min(max, Math.max(min, Math.floor(typed)));
-  }
+  showReadingLevels();
+}
+
+function showReadingLevels() {
+  const line = (entry, upgradeId) =>
+    entry ? `Read at ${upgradeLabel(rules, upgradeId)} level ${entry.level}.` : `Read it at your current ${upgradeLabel(rules, upgradeId)} level (${input.levels[upgradeId]}).`;
+  $("shownDailyCapAt").textContent = line(input.shown.dailyCap, "LuresPerDay");
+  $("shownTackleboxAt").textContent = line(input.shown.tackleboxCapacity, "TackleBoxSize");
 }
 
 /* ---------- filling the form ---------- */
@@ -93,8 +112,9 @@ function fillForm() {
   }
   setValue("prestigesPerDay", input.prestigesPerDay);
   setValue("visitsPerDay", input.visitsPerDay);
-  setValue("shownDailyCap", input.shown.dailyCap);
-  setValue("shownTackleboxCapacity", input.shown.tackleboxCapacity);
+  setValue("shownDailyCap", input.shown.dailyCap?.value);
+  setValue("shownTackleboxCapacity", input.shown.tackleboxCapacity?.value);
+  showReadingLevels();
 }
 
 function buildLevels() {
@@ -126,6 +146,8 @@ function buildLevels() {
       input.levels[id] = Math.min(max, Math.max(min, input.levels[id] + Number(button.dataset.step)));
       field.value = String(input.levels[id]);
       sync();
+      // a button that just reached its limit is disabled: keep the keyboard focus in the row
+      if (button.disabled) field.focus();
       changed();
     });
     // clamp what was typed once the player leaves the field
@@ -340,6 +362,7 @@ function requestPlan() {
 }
 
 function changed() {
+  showReadingLevels();
   writeInput(storage, input);
   clearTimeout(recalcTimer);
   recalcTimer = setTimeout(requestPlan, RECALC_DELAY_MS);

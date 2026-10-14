@@ -22,6 +22,12 @@ describe("input", () => {
     assert.equal(got.hoursLeft, 30);
     assert.deepEqual(got.levels, { ...allAt(1), FishingHook: 11, FishingSkill: 1, LuresPerDay: 2 });
   });
+  it("keeps a shown value with the level it was read at, and drops a malformed one", () => {
+    const got = readInput(JSON.stringify({ version: 1, shown: { dailyCap: { value: 100, level: 2 }, tackleboxCapacity: 10 } }), game, rules);
+    assert.deepEqual(got.shown, { dailyCap: { value: 100, level: 2 }, tackleboxCapacity: null });
+    const outOfRange = readInput(JSON.stringify({ version: 1, shown: { dailyCap: { value: 100, level: 40 }, tackleboxCapacity: { value: -3, level: 1 } } }), game, rules);
+    assert.deepEqual(outOfRange.shown, { dailyCap: null, tackleboxCapacity: null });
+  });
   it("round-trips through storage and survives a storage that throws", () => {
     const s = memory();
     const input = { ...defaultInput(game, rules), coins: 42, hoursLeft: 50, prestigesPerDay: 8, visitsPerDay: 5 };

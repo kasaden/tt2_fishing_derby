@@ -386,7 +386,13 @@ input[type="number"][aria-invalid="true"] {
 .result {
   display: grid;
   gap: var(--s-xl);
-  outline: none;
+  border-radius: var(--r-panel);
+}
+
+/* reached through the skip link: show where the focus landed */
+.result:focus {
+  outline: 2px solid var(--gold);
+  outline-offset: 8px;
 }
 
 .result-head {

@@ -88,15 +88,17 @@
 
       <fieldset id="shownGroup" class="group" hidden>
         <legend>Two values the tool does not know yet</legend>
-        <p class="hint">Copy them from the game at your current levels. They replace the rules' unknown base values.</p>
+        <p class="hint">Copy them from the game. The tool remembers the level you read each one at, so you only enter them once.</p>
         <div class="fields">
           <div class="field" id="shownDailyCapField">
             <label for="shownDailyCap">Daily lure limit shown in game</label>
-            <input id="shownDailyCap" name="shownDailyCap" type="number" inputmode="numeric" min="0" step="1" autocomplete="off" />
+            <input id="shownDailyCap" name="shownDailyCap" type="number" inputmode="numeric" min="0" step="1" autocomplete="off" aria-describedby="shownDailyCapAt" />
+            <p id="shownDailyCapAt" class="hint"></p>
           </div>
           <div class="field" id="shownTackleboxField">
             <label for="shownTackleboxCapacity">Tacklebox capacity shown in game</label>
-            <input id="shownTackleboxCapacity" name="shownTackleboxCapacity" type="number" inputmode="numeric" min="0" step="1" autocomplete="off" />
+            <input id="shownTackleboxCapacity" name="shownTackleboxCapacity" type="number" inputmode="numeric" min="0" step="1" autocomplete="off" aria-describedby="shownTackleboxAt" />
+            <p id="shownTackleboxAt" class="hint"></p>
           </div>
         </div>
       </fieldset>

@@ -16,7 +16,7 @@ export function runPlanRequest({ game, rules, input }, { post, now }) {
       post({ type: "missing", fields });
       return;
     }
-    const effective = withShownValues(rules, game, input.levels, input.shown);
+    const effective = withShownValues(rules, game, input.shown);
     const model = createModel(game, effective, { prestigesPerDay: input.prestigesPerDay, visitsPerDay: input.visitsPerDay });
     const state = initialState(model, {
       levels: input.levels,

@@ -143,16 +143,18 @@ export function missingBases(rules) {
 }
 
 /**
- * Fills each unknown base from the value the game shows at the player's current level:
- * base = shown − the upgrade's bonus at that level. Known bases are kept.
+ * Fills each unknown base from a value the game showed and the level it was read at:
+ * base = shown − the upgrade's bonus at that level. A reading stays right after the upgrade is raised.
+ * shown = { dailyCap: { value, level } | null, tackleboxCapacity: { value, level } | null }. Known bases are kept.
  */
-export function withShownValues(rules, game, levels, shown) {
+export function withShownValues(rules, game, shown) {
   const out = { ...rules };
-  const derive = (key, upgradeId, value, label) => {
-    if (out[key] !== null || value === null || value === undefined) return;
-    const bonus = upgradeValue(game, rules, upgradeId, levels[upgradeId]);
-    if (value < bonus) throw new RulesError(`shown ${label} (${value}) is lower than the ${upgradeId} bonus at level ${levels[upgradeId]} (${bonus})`);
-    out[key] = value - bonus;
+  const derive = (key, upgradeId, reading, label) => {
+    if (out[key] !== null || !reading) return;
+    const bonus = upgradeValue(game, rules, upgradeId, reading.level);
+    const name = rules.names[upgradeId] ?? upgradeId;
+    if (reading.value < bonus) throw new RulesError(`shown ${label} (${reading.value}) is lower than the ${name} bonus at level ${reading.level} (${bonus})`);
+    out[key] = reading.value - bonus;
   };
   derive("dailyCapBase", "LuresPerDay", shown?.dailyCap, "daily limit");
   derive("tackleboxBaseCapacity", "TackleBoxSize", shown?.tackleboxCapacity, "Tacklebox capacity");
