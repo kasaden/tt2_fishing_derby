@@ -1,7 +1,7 @@
 # TT2 Fishing Derby — Données numériques publiques
 
 Source : https://github.com/rawrzcookie/TT2_CSV/tree/main/csv
-Fichiers `MinigameFishingDerby*.csv`, lus le 14 octobre 2026.
+Fichiers `MinigameFishingDerby*.csv`, lus le 14 octobre 2026. Depuis le 14 octobre 2026, ils vivent dans `../site/data/`, le dossier publié par l'outil (déplacés avec `git mv`, leur historique se suit avec `git log --follow`). Ce dossier garde ce README et `model_check.py`.
 
 Dernière modification de chaque fichier dans le dépôt source (historique des commits GitHub, consulté le 14 octobre 2026) :
 
@@ -30,4 +30,4 @@ Les tableaux `BonusValue` ne suffisent pas à inférer la fonction exacte de gé
 Les niveaux de RarityInfo ne doivent pas être automatiquement assimilés à l'amélioration FishingBait avant confirmation en jeu.
 Attention : les noms « XP », « coins » et l'unité des tailles sont à confirmer en jeu.
 
-Commande : `python model_check.py`.
+Commande : `python model_check.py` (lit les CSV dans `../site/data/`).

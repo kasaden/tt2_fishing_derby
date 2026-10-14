@@ -1,7 +1,7 @@
 """Statistiques reproductibles des tables de Fishing Derby (sans simuler les règles inconnues)."""
 import csv
 from pathlib import Path
-BASE = Path(__file__).resolve().parent
+BASE = Path(__file__).resolve().parent.parent / "site" / "data"  # les CSV vivent dans le dossier publié
 
 def read(filename):
     with (BASE / filename).open(newline='', encoding='utf-8') as f:
