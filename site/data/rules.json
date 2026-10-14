@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "sizeUnit": null,
+  "rules": [
+    { "id": "score", "status": "verified", "source": "Game Hive, DevUpdate #142 (2025-07-04)", "text": "Rewards follow the total length of all the fish you catch during the event." },
+    { "id": "luresPerCatch", "status": "assumed", "source": null, "text": "Each catch uses one lure.", "value": 1 },
+    { "id": "prestigeLures", "status": "assumed", "source": null, "text": "Each prestige gives as many lures as your Fishing Line value." },
+    { "id": "tacklebox", "status": "assumed", "source": null, "text": "The Tacklebox makes one lure every N minutes, N being its Speed value, and holds a base capacity plus its Size value. At Speed 0 it is full at every visit.", "unitMinutes": 1, "baseCapacity": null, "zeroSpeed": "fullEachVisit" },
+    { "id": "dailyCap", "status": "assumed", "source": null, "text": "You can catch at most a base daily limit plus your Bucket value per day, counted in 24-hour blocks from now.", "base": null, "appliesTo": "catches", "window": "24hFromNow" },
+    { "id": "species", "status": "assumed", "source": null, "text": "Fishing Skill unlocks the species whose required level is below its value; every unlocked species is equally likely.", "unlock": "levelBelowSkill", "weights": "equal" },
+    { "id": "size", "status": "assumed", "source": null, "text": "A catch's length is drawn evenly between the species' smallest and largest length, then multiplied by the Fishing Hook value.", "model": "uniformTimesHook" },
+    { "id": "rarity", "status": "assumed", "source": null, "text": "Rarity is drawn from the rarity table at your bait value plus one.", "levelFrom": "FishingBait", "levelOffset": 1 },
+    { "id": "coins", "status": "assumed", "source": null, "text": "A catch gives the coins its rarity is worth in the game's XP table." },
+    { "id": "levels", "status": "assumed", "source": null, "text": "Levels start at 1; level L gives the L-th value of its list, and going from L to L+1 costs the L-th cost.", "minLevel": 1, "valueOffset": -1, "costOffset": -1 },
+    { "id": "unusedLures", "status": "assumed", "source": null, "text": "Lures you do not use stay in stock, with no limit." },
+    { "id": "upgradeNames", "status": "assumed", "source": "Game Hive, DevUpdate #142 (2025-07-04)", "text": "In-game names are matched to the game data from the descriptions in Game Hive's post.", "names": { "LuresPerPrestige": "Fishing Line", "LuresPerDay": "Bucket", "FishingHook": "Fishing Hook", "FishingSkill": "Fishing Skill", "FishingBait": null, "TackleBoxSpeed": "Tacklebox Speed", "TackleBoxSize": "Tacklebox Size" }, "hidden": [] }
+  ]
+}
