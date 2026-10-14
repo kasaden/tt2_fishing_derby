@@ -31,11 +31,13 @@ function targetsFrom(order, base) {
  */
 export function followOrder(order, then = null, base = null) {
   let targets = base ? targetsFrom(order, base) : null;
+  let reached = 0; // targets are reached in order, so the scan resumes where it stopped
   return (view) => {
     if (!targets) targets = targetsFrom(order, view.levels);
-    for (const [id, level] of targets) {
-      if (view.levels[id] < level) return id;
-    }
+    // A view below an already reached target means a new run from an earlier state: scan from the start again.
+    if (reached > 0 && view.levels[targets[reached - 1][0]] < targets[reached - 1][1]) reached = 0;
+    while (reached < targets.length && view.levels[targets[reached][0]] >= targets[reached][1]) reached += 1;
+    if (reached < targets.length) return targets[reached][0];
     return then ? then(view) : null;
   };
 }

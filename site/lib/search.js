@@ -42,14 +42,18 @@ function lengthPerHour(model, levels) {
 /** The simple policy: buy the affordable next level with the best gain in length per hour per coin; never one that adds nothing. */
 export function rolloutPolicy(model) {
   return (view) => {
-    const base = lengthPerHour(model, view.levels);
+    const levels = view.levels;
+    const base = lengthPerHour(model, levels);
     let best = null;
     let bestScore = 0;
     let bestCost = Infinity;
     for (const id of model.ids) {
-      const cost = model.cost(id, view.levels[id]);
+      const cost = model.cost(id, levels[id]);
       if (cost === null || cost > view.coins) continue;
-      const gain = lengthPerHour(model, { ...view.levels, [id]: view.levels[id] + 1 }) - base;
+      // Raise the level in place and put it back: this runs millions of times, a copy per try costs most of the search.
+      levels[id] += 1;
+      const gain = lengthPerHour(model, levels) - base;
+      levels[id] -= 1;
       if (gain <= EPS) continue;
       const score = cost === 0 ? Infinity : gain / cost;
       if (score > bestScore || (score === bestScore && cost < bestCost)) {
@@ -228,20 +232,28 @@ export function describePlan(model, state, order) {
 
 /**
  * Runs the methods in turn and keeps the best order found. The first plan (lookahead of one purchase) always completes
- * and is published; the others stop at the deadline. onProgress receives a plan each time the final length improves.
+ * and is published; then the beam, the improvement of the best so far, and the lookahead stop at the deadline
+ * (measured on the real data: in this order the beam, the fastest good method, always gets its time).
+ * Each order a method returns is also tried completed by the simple policy, so a method cut short still counts.
+ * onProgress receives a plan each time the final length improves.
  */
 export function findBestPlan(model, state, { deadline = Infinity, now = Date.now, onProgress = () => {} } = {}) {
+  const rollout = rolloutPolicy(model);
   let best = null;
-  const consider = (order) => {
+  const tryOrder = (order) => {
     const result = evaluate(model, state, order);
     if (best && compareResults(result, best.result) <= 0) return;
     const lengthImproved = !best || result.finalLength > best.result.finalLength + EPS;
     best = { order: result.purchases.map((p) => p.upgradeId), result };
     if (lengthImproved) onProgress(describePlan(model, state, best.order));
   };
+  const consider = (order) => {
+    tryOrder(order);
+    tryOrder(simulate(model, state, followOrder(order, rollout, state.levels)).purchases.map((p) => p.upgradeId));
+  };
   consider(lookaheadOrder(model, state, { depth: 1 }));
-  if (now() <= deadline) consider(lookaheadOrder(model, state, { depth: LOOKAHEAD_DEPTH, deadline, now }));
   if (now() <= deadline) consider(beamOrder(model, state, { width: BEAM_WIDTH, deadline, now }));
   if (now() <= deadline) consider(improveOrder(model, state, best.order, { deadline, now }));
+  if (now() <= deadline) consider(lookaheadOrder(model, state, { depth: LOOKAHEAD_DEPTH, deadline, now }));
   return describePlan(model, state, best.order);
 }
