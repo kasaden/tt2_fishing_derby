@@ -2,8 +2,9 @@
 
 - **Date** : 14 octobre 2026.
 - **Statut** : à relire par le propriétaire. Rien n'est construit. Le dépôt contient `README.md`, `LICENSE` et `fishing_derby_data/` (6 CSV, leur README, `model_check.py`).
+- **Révision du 14 octobre 2026** : publication sur Cloudflare Pages au lieu de GitHub Pages, et séparation du dossier publié (`site/`), d'après les décisions du propriétaire prises dans la session du hub (surtout § 10 et § 14 ; touches aux § 2, 5, 7, 8, 12, 13 et 15).
 - **Langue** : cette spec est en français pour la relecture. Le code, l'interface et la documentation publique du dépôt seront en anglais.
-- **Références** : `fishing_derby_data/README.md` (provenance et vérification des CSV, 14 octobre 2026), le billet GameHive [DevUpdate #142](https://gamehive.com/blog/devupdate-142-questing-into-the-deep) (4 juillet 2025), les dépôts voisins `../tt2_hub` (DESIGN.md, PRODUCT.md, `tools.json`), `../tt2_alchemy_lab` et `../tt2_monuments`, en lecture seule.
+- **Références** : `fishing_derby_data/README.md` (provenance et vérification des CSV, 14 octobre 2026), le billet GameHive [DevUpdate #142](https://gamehive.com/blog/devupdate-142-questing-into-the-deep) (4 juillet 2025), les dépôts voisins `../tt2_hub` (DESIGN.md, PRODUCT.md, `tools.json`), `../tt2_alchemy_lab` et `../tt2_monuments`, en lecture seule. La documentation Cloudflare citée au § 14, lue le 14 octobre 2026.
 
 Statuts utilisés : **[Confirmé]** (source primaire ou donnée vérifiée), **[À vérifier]** (hypothèse que l'outil affiche comme telle, à confirmer en jeu), **[Proposition]** (choix de conception validé en séance, révisable).
 
@@ -21,10 +22,10 @@ Le billet officiel indique que les récompenses dépendent de la longueur totale
 | Public | Public, en anglais, comme les autres outils, ajouté au hub |
 | Expérience des règles | Le propriétaire a déjà joué sans retenir les détails : les règles viennent des CSV et des relevés en jeu |
 | Réponse de l'outil | Le prochain achat en grand, et le plan complet jusqu'à la fin en dessous |
-| Moteur | Meilleur rendement à chaque achat, en regardant 3 achats d'avance (réglable), contrôlé dans les tests par une recherche lourde qui mesure l'écart avec le meilleur plan trouvé |
+| Moteur | Révisé après prototype (§ 8) : plusieurs méthodes de recherche en arrière-plan dans un délai fixé, le meilleur plan trouvé est gardé et présenté comme « meilleur trouvé », jamais comme prouvé. La décision initiale (3 achats d'avance seuls) laissait jusqu'à un tiers de la longueur sur un cas de 72 h |
 | Règles du jeu | Dans un fichier de données, chacune marquée vérifiée ou supposée ; une correction en jeu change la donnée, pas le code |
 | Aspect | Base commune du hub ; couleur, emblème et allure des cartes choisis sur maquettes avec Impeccable avant de construire l'interface |
-| Technique | Comme les outils voisins : HTML, CSS et JavaScript sans framework ni build, tout dans le navigateur, GitHub Pages |
+| Technique | Comme les outils voisins : HTML, CSS et JavaScript sans framework ni build, tout dans le navigateur, aucun code côté serveur. Publié par Cloudflare Pages depuis le dossier `site/` (§ 14) |
 
 ## 3. Périmètre
 
@@ -53,7 +54,8 @@ Joueurs de Tap Titans 2 pendant un Fishing Derby, toute la communauté, en angla
 - le **niveau de chaque amélioration**, tel que le jeu l'affiche, avec des boutons − / + et une saisie au clavier (comme l'inventaire d'Alchemy) ;
 - ses **Fishing Coins** actuels ;
 - ses **lures en stock** (pas encore utilisés) ;
-- le **temps restant** de l'événement, en jours et heures, lu sur le compte à rebours du jeu.
+- le **temps restant** de l'événement, en jours et heures, lu sur le compte à rebours du jeu ;
+- la **longueur totale déjà pêchée**, affichée en jeu (ajout du 14 octobre à l'écriture du plan : sans elle, l'outil ne peut estimer ni la longueur finale ni les paliers atteints).
 
 Réglages de jeu, rarement modifiés :
 
@@ -74,23 +76,25 @@ Les 7 améliorations, avec leur nom en jeu d'après le billet officiel (correspo
 
 Si `FishingBait` n'existe pas en jeu, il disparaît de l'outil.
 
-Tout est sauvegardé dans `localStorage`, rien n'est envoyé ailleurs. Chaque accès au stockage est protégé : l'outil fonctionne aussi sans lui.
+Tout est sauvegardé dans `localStorage`, rien n'est envoyé ailleurs. Chaque accès au stockage est protégé : l'outil fonctionne aussi sans lui. La sauvegarde est liée à l'adresse du site : elle ne suivra pas le passage à un autre domaine (§ 14).
 
 ## 6. Ce que l'outil affiche
 
 1. **Le prochain achat**, en grand : l'amélioration, le passage de niveau (par exemple « Fishing Skill, level 2 → 3 »), son coût, puis :
    - « Buy now » si les coins suffisent ;
    - sinon « Save up: N more coins », quand le moteur juge préférable d'économiser pour cet achat plutôt que d'en faire un moins cher tout de suite.
-2. **Pourquoi**, en une phrase calculée par le moteur : la longueur finale estimée avec ce premier achat, comparée à celle du meilleur plan qui commence par un autre achat (écart en cm).
+2. **Pourquoi**, en une phrase calculée par le moteur : la longueur finale estimée avec ce premier achat, comparée à celle du meilleur plan qui commence par un autre achat fait avant la fin (ou à « ne rien acheter » s'il n'y en a aucun). Les longueurs s'affichent sans unité tant que l'unité n'est pas vérifiée en jeu.
 3. **Le plan complet** : chaque achat dans l'ordre, le moment approximatif où les coins seront disponibles (jour et heure de l'événement), et la longueur totale estimée à ce moment.
 4. **La longueur finale estimée**, présentée comme une estimation, et les **paliers de récompenses solo** qu'elle atteint (fichier `MinigameFishingDerbySoloContributionRewards.csv`, 41 paliers, données réelles).
 5. **Les règles utilisées**, dans une section repliable : chaque règle du § 7, son statut et sa source.
+
+Le plan s'affiche d'abord vite, puis s'améliore pendant le délai de calcul, avec la mention « Improving the plan… ». Il est présenté comme « Best plan found », jamais comme le meilleur possible.
 
 Aucun chiffre affiché n'est saisi à la main : tout sort du moteur ou des fichiers de données.
 
 ## 7. Modèle du jeu : les règles
 
-Chaque règle vit dans `data/rules.json`, avec un identifiant, un énoncé en anglais pour l'interface, un statut (`verified` ou `assumed`), une source, et les paramètres qu'elle fixe.
+Chaque règle vit dans `site/data/rules.json`, avec un identifiant, un énoncé en anglais pour l'interface, un statut (`verified` ou `assumed`), une source, et les paramètres qu'elle fixe.
 
 | # | Règle | Hypothèse de départ | Paramètres | Statut |
 | --- | --- | --- | --- | --- |
@@ -98,12 +102,15 @@ Chaque règle vit dans `data/rules.json`, avec un identifiant, un énoncé en an
 | 2 | Une lure | Une lure = une prise | `luresPerCatch` | **[À vérifier]** |
 | 3 | Lures par prestige | `LuresPerPrestige` au niveau courant (4 à 99) | aucun | **[À vérifier]** |
 | 4 | Tacklebox | 1 lure toutes les `TackleBoxSpeed` unités de temps ; capacité = base + `TackleBoxSize` ; sens du `0` au dernier niveau inconnu | `tackleboxUnit`, `tackleboxBaseCapacity`, `tackleboxZeroSpeed` | **[À vérifier]** |
-| 5 | Plafond par jour | Base + `LuresPerDay` ; il limite les prises d'une journée ; heure de remise à zéro | `dailyCapBase`, `dailyCapAppliesTo`, `dailyResetHourUtc` | **[À vérifier]** |
+| 5 | Plafond par jour | Base + `LuresPerDay` ; il limite les prises d'une journée, comptée par tranches de 24 h à partir de maintenant | `dailyCapBase`, `dailyCapAppliesTo`, `dailyWindow` | **[À vérifier]** |
 | 6 | Espèces | `FishingSkill` débloque les espèces selon `FishingLevelToCatch` ; tirage avec les mêmes chances pour chaque espèce débloquée | `speciesUnlock`, `speciesWeights` | **[À vérifier]** |
 | 7 | Taille | Uniforme entre `MinSize` et `MaxSize`, multipliée par `FishingHook` ; `RaritySize` ignorée | `sizeModel` | **[À vérifier]** |
 | 8 | Rareté | Tirée dans `MinigameFishingDerbyRarityInfo.csv` ; le niveau de la table vient d'une amélioration (probablement `FishingBait`) | `rarityLevelSource`, `rarityLevelOffset` | **[À vérifier]** |
 | 9 | Coins par prise | `XP` de la rareté : 1, 2, 5, 25, 25 | aucun | **[À vérifier]** (relevé du 15 octobre) |
 | 10 | Niveaux et coûts | Correspondance entre le niveau affiché et la position dans `XPCost` et `BonusValue` | `levelIndexing` | **[À vérifier]** (relevé du 15 octobre) |
+| 11 | Lures non utilisés | Ils restent en stock, sans limite | aucun | **[À vérifier]** |
+
+L'unité des longueurs (`sizeUnit`) reste vide tant qu'elle n'est pas vérifiée : l'interface affiche alors les longueurs sans unité.
 
 Règles de conduite du fichier :
 
@@ -113,7 +120,7 @@ Règles de conduite du fichier :
 
 ## 8. Le moteur
 
-Le moteur ne touche pas au DOM : il tourne à l'identique dans la page et dans Node pour les tests.
+Le moteur ne touche pas au DOM : il tourne à l'identique dans la page et dans Node pour les tests, qui l'importent depuis `site/lib/`.
 
 ### 8.1 Simulation en moyennes
 
@@ -131,23 +138,27 @@ Avec les règles de départ :
 
 Les quantités sont fractionnaires (ce sont des moyennes). Le moment d'un achat dans le plan est donc approximatif, et l'interface le dit.
 
-### 8.2 Choix des achats
+### 8.2 Choix des achats (révisé le 14 octobre 2026 après prototype)
 
-À chaque décision, le moteur considère toutes les suites de 1 à 3 prochains achats (chaque achat = le niveau suivant d'une amélioration), soit au plus 7 + 49 + 343 = 399 suites. Pour chaque suite :
+Un plan est un **ordre d'achats** : chaque achat est le niveau suivant d'une amélioration, fait dès que les coins le permettent. Tous les plans sont évalués par la même simulation (§ 8.1), qui rend leur longueur finale estimée. Le moteur essaie plusieurs méthodes et garde le meilleur plan trouvé (à longueur égale : celui qui laisse le plus de coins, puis le moins cher en premier achat) :
 
-1. il simule l'événement en faisant ces achats dans l'ordre, dès que les coins le permettent ;
-2. après la suite, il continue avec une politique simple : à chaque visite, acheter l'amélioration abordable qui augmente le plus la longueur gagnée par heure, par coin dépensé. Une amélioration qui ne rapporte que des coins (par exemple celle qui fait monter la rareté) vaut 0 pour cette politique simple : sa valeur n'est vue que par les 3 achats d'avance, et le contrôle du § 8.3 mesure ce que cette limite coûte ;
-3. il retient la longueur finale estimée.
+1. **Regard d'avance** : à chaque décision, toutes les suites de 1 à 3 prochains achats sont simulées, suivies d'une politique simple (acheter l'amélioration abordable qui augmente le plus la longueur gagnée par heure, par coin). Le premier achat de la meilleure suite rejoint le plan. Un achat qui n'ajoute aucune longueur n'est jamais retenu.
+2. **Faisceau** : à chaque étape, les 30 meilleurs débuts de plan sont gardés (jugés par la même politique simple après eux) et prolongés de chaque achat possible ; deux débuts qui mènent aux mêmes niveaux ne comptent qu'une fois.
+3. **Retouche** : sur le meilleur plan obtenu, le moteur essaie de retirer un achat, d'en ajouter un, ou d'en déplacer un, et garde chaque changement qui allonge la longueur finale, jusqu'à ce qu'aucun n'aide ou que le délai soit écoulé.
 
-Il garde le premier achat de la meilleure suite, l'ajoute au plan, et recommence depuis l'état atteint, jusqu'à la fin de l'événement ou jusqu'à ce qu'aucun achat ne soit plus utile. La profondeur (3) est une constante réglable **[Proposition]**.
+Le calcul tourne dans un Web Worker, avec un délai de 2 s **[Proposition]**. Un premier plan (regard d'avance d'un seul achat) est publié tout de suite, puis remplacé à chaque amélioration. Le calcul est déterministe : la même saisie donne le même plan. Profondeur, largeur et délai sont des constantes réglables.
+
+Mesures du prototype (données réelles, valeurs de base inventées pour le test, événement de 72 h) : 3 achats d'avance seuls, 8 873 ; 4 achats d'avance, 11 775 ; faisceau de 30, 13 310. Sur 168 h : 45 933, 46 939, 46 105, et 47 693 avec la retouche. Aucune méthode ne gagne partout, d'où le portefeuille.
 
 ### 8.3 Contrôle de qualité (tests seulement)
 
-Sur des cas fixés et réduits (événement court, peu d'améliorations), une recherche lourde essaie tous les ordres d'achat possibles, ou une recherche par faisceau large quand ils sont trop nombreux, et donne le meilleur plan trouvé. Le test mesure l'écart de longueur finale entre ce plan et celui du moteur. Si l'écart dépasse 1 % sur un cas **[Proposition]**, la profondeur ou la politique simple est revue. L'écart mesuré est noté dans le README.
+Sur des cas fixés et réduits où tous les ordres d'achat peuvent être essayés, le plan du moteur doit atteindre au moins 99 % de la longueur finale du meilleur ordre **[Proposition]**. Sur les données réelles, un script de mesure compare les méthodes et le portefeuille ; les écarts mesurés sont notés dans le README.
 
 ### 8.4 Performance
 
-Le temps de calcul d'un plan est mesuré dans le navigateur. S'il dépasse 300 ms **[Proposition]**, le calcul passe dans un Web Worker, comme dans Alchemy. Si une profondeur de 4 reste sous ce seuil, elle est adoptée.
+Les longueurs et coins moyens sont précalculés pour chaque combinaison de niveaux utile, et les simulations repartent d'états déjà calculés plutôt que du début. Le temps du premier plan et le résultat obtenu dans le délai sont mesurés, sur ordinateur et dans le navigateur.
+
+Tout le calcul reste dans le navigateur : aucun code ne tourne côté serveur (§ 14).
 
 ## 9. Interface et aspect
 
@@ -160,15 +171,26 @@ Le temps de calcul d'un plan est mesuré dans le navigateur. S'il dépasse 300 m
 ## 10. Fichiers
 
 ```
-fishing_derby_data/   les 6 CSV (source de vérité, lus au démarrage), leur README, model_check.py
-data/rules.json       les règles du § 7
-lib/                  le moteur : lecture des CSV et des règles, simulation, choix des achats, paliers
-index.html, style.css, index.js, favicon.svg   l'interface
-server.js             serveur local de développement (Node, comme les outils voisins)
-tests/                tests node --test
+site/                 le dossier publié, et lui seul (§ 14)
+  index.html, style.css, index.js, favicon.svg   l'interface
+  worker.js           le calcul en arrière-plan (§ 8.2)
+  lib/                le moteur : lecture des CSV et des règles, simulation, choix des achats, paliers
+  data/rules.json     les règles du § 7
+  data/*.csv          les 6 CSV MinigameFishingDerby* (source de vérité, lus au démarrage)
+fishing_derby_data/   le README de provenance des CSV et model_check.py, qui lit ../site/data/
+docs/                 cette spec et les autres documents de travail
+server.js             serveur local de développement (Node, comme les outils voisins) : il sert site/ et rien d'autre
+tests/                tests node --test, qui importent ../site/lib/
 .github/workflows/test.yml   les tests à chaque envoi et pull request
-.editorconfig, .gitattributes (fins de ligne LF), .gitignore
+.editorconfig, .gitattributes (fins de ligne LF), .gitignore, README.md, LICENSE
 ```
+
+Règles du dossier publié :
+
+- **Tout ce qui est dans `site/` est publié**, même si le dépôt reste privé (§ 14). Seuls les fichiers que la page sert y entrent. Restent dehors : la spec et `docs/`, `tests/`, les README, `model_check.py`, `.github/` et tout script de mesure ou de développement.
+- **Liens relatifs partout dans `site/`** (imports `./lib/…`, `data/rules.json`, `new Worker("worker.js", …)`) : aucun chemin ne commence par `/`. Le site marche ainsi sous `*.pages.dev`, sous les adresses de prévisualisation et sous `derby.kasaden.io`.
+- **Le serveur de développement sert `site/`**, comme Cloudflare Pages : un fichier oublié hors de `site/` se voit en local, avant la mise en ligne.
+- Les 6 CSV passent de `fishing_derby_data/` à `site/data/` avec `git mv`, pour que `git log --follow` retrouve leur historique. Le README de provenance et `model_check.py` sont mis à jour avec ce chemin.
 
 Le `README.md` racine est réécrit en anglais : ce que fait l'outil, comment le lancer, les données et leurs sources, les règles supposées.
 
@@ -186,25 +208,42 @@ Le `README.md` racine est réécrit en anglais : ce que fait l'outil, comment le
 - lecture des données : 50 poissons, 7 améliorations, 12 niveaux de rareté, 5 raretés, 41 paliers ; colonnes attendues ;
 - règles : chaque variante de `levelIndexing` ; règle inconnue → refus explicite ;
 - simulation : petits cas dont le résultat est calculé indépendamment dans le test ;
-- choix des achats : cas construits où le bon achat est connu d'avance (par exemple un achat gratuit qui augmente la taille) ;
-- contrôle de qualité du § 8.3.
+- choix des achats : cas construits où le bon achat est connu d'avance (par exemple un achat gratuit qui augmente la taille), cas où un achat bon marché n'apporte rien et ne doit jamais être recommandé, déterminisme, respect du délai ;
+- contrôle de qualité du § 8.3 ;
+- dossier publié : un test liste le contenu de `site/` et échoue sur un fichier non prévu (un `.md`, un `.py`, un fichier caché) ou sur un chemin qui commence par `/` dans les fichiers servis **[Proposition]**.
 
 Interface (preuve par le rendu) : captures à 375 et 1 440 px, `npx impeccable detect`, parcours complet au clavier, animations réduites. Ce qui n'a pas pu être vérifié est dit.
 
 ## 13. Ordre de construction
 
 1. Moteur, `rules.json` et tests. Commence dès le plan validé ; les relevés du 15 octobre fixent, si le jeu les affiche, les règles 3 à 6 et 8 à 10 du § 7.
-2. Interface, après le choix sur maquettes ; puis mise en ligne.
+2. Interface, après le choix sur maquettes ; puis mise en ligne sur Cloudflare Pages (§ 14), une fois que le propriétaire a créé le compte et le projet.
 3. Corrections de `rules.json` au fil des relevés pendant l'événement.
-4. Ajout au hub (`../tt2_hub/tools.json` et emblème) : autre dépôt, tâche séparée, avec l'accord du propriétaire.
+4. Ajout au hub (`../tt2_hub/tools.json` et emblème) : autre dépôt, tâche séparée, avec l'accord du propriétaire. Son `url` sera l'adresse en `*.pages.dev`, puis `derby.kasaden.io`.
 
 ## 14. Publication
 
-GitHub Pages depuis `main`. Le dépôt `kasaden/tt2_fishing_derby` répond 404 sans authentification, il semble donc privé ; GitHub Pages gratuit exige un dépôt public. Le rendre public est une décision du propriétaire, demandée au moment de la mise en ligne.
+Décisions du propriétaire du 14 octobre 2026, prises dans la session du hub. La documentation Cloudflare citée en bas de section a été lue le même jour.
+
+- **Hébergeur** : Cloudflare Pages, connecté au dépôt GitHub (Git integration). Branche de production : `main`. Chaque autre branche poussée donne une version de prévisualisation, à sa propre adresse.
+- **Réglages du projet**, saisis par le propriétaire, qui crée lui-même le compte et le projet :
+  - Framework preset : aucun ;
+  - Build command : vide (« If you do not need a build step, leave the Build command field blank ») ;
+  - Build output directory : `site`.
+- **Ce qui est publié** : Cloudflare met en ligne tout le contenu du dossier de sortie. Tout ce qui est dans `site/` devient donc public, même si le dépôt reste privé. C'est pour cela que le § 10 n'y met que les fichiers servis.
+- **Adresse** : d'abord une adresse en `*.pages.dev`, que Cloudflare tire du nom du projet. Nom proposé, avec des tirets : `tt2-fishing-derby`. L'adresse exacte se lit dans le tableau de bord une fois le projet créé **[À vérifier]**. Ensuite `derby.kasaden.io`, une fois le domaine acheté : le sous-domaine s'ajoute dans le projet (Custom domains, puis Set up a domain), et pour un sous-domaine, le domaine n'a pas besoin d'être une zone Cloudflare.
+- **Dépôt** : Cloudflare Pages accepte les dépôts privés comme publics. Le dépôt peut rester privé, et sa visibilité reste une décision du propriétaire. La contrainte de GitHub Pages gratuit (dépôt public) ne s'applique plus. Conséquence à trancher avec cette décision (§ 15) : si le dépôt reste privé, le lien vers le code source que le pied de page du hub prévoit (`../tt2_hub/DESIGN.md`, Footer) et le champ `repo` de `tools.json` mèneront les visiteurs à une 404.
+- **Aucun code côté serveur**, donc pas de Pages Functions. Leurs appels sont comptés comme des requêtes Workers. Le plan gratuit des Workers les limite à 100 000 par jour et à 10 ms de CPU par requête HTTP. Les requêtes vers des fichiers statiques, elles, sont gratuites et sans limite. L'outil n'est fait que de fichiers statiques : tout le calcul tourne dans le navigateur (§ 8).
+- **Sauvegarde du navigateur** : `localStorage` est propre à chaque adresse. Au passage de `*.pages.dev` à `derby.kasaden.io`, la saisie gardée ne suivra pas. Aucune migration n'est prévue : le propriétaire l'accepte.
+- **Hub** : `../tt2_hub` reste en lecture seule depuis ce dépôt. L'ajout au hub reste la tâche séparée du § 13.4.
+
+Sources : [Git integration](https://developers.cloudflare.com/pages/get-started/git-integration/), [Custom domains](https://developers.cloudflare.com/pages/configuration/custom-domains/), [Workers limits](https://developers.cloudflare.com/workers/platform/limits/), [Pages Functions pricing](https://developers.cloudflare.com/pages/functions/pricing/).
 
 ## 15. Questions ouvertes
 
 - **Nom de l'outil** : « TT2 Fishing Derby Optimizer » est une proposition, à confirmer par le propriétaire.
+- **Visibilité du dépôt** (décision du propriétaire) et, s'il reste privé, ce que deviennent le lien vers le code source du pied de page et le champ `repo` du hub (§ 14).
+- Adresse exacte en `*.pages.dev`, connue une fois le projet Cloudflare créé.
 - Existence et effet de `FishingBait` ; ce qui fait monter le niveau de la table de rareté.
 - Bases du plafond quotidien et de la capacité de la Tacklebox ; unité de `TackleBoxSpeed` et sens de sa valeur 0.
 - Le plafond quotidien limite-t-il les lures gagnés ou les prises ; heure de remise à zéro.
