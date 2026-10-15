@@ -15,7 +15,7 @@ function perLevel(game, rules, id, fn) {
 }
 
 /**
- * Builds the model. settings = { prestigesPerDay ≥ 0, visitsPerDay > 0 }.
+ * Builds the model. Lures come per decision step: prestige lures (limited per day by the simulation) and Tacklebox lures. settings = { prestigesPerDay ≥ 0, visitsPerDay > 0 }.
  * Throws a RulesError when a base the engine needs is still unknown.
  */
 export function createModel(game, rules, settings) {
@@ -51,9 +51,9 @@ export function createModel(game, rules, settings) {
     return row.probabilities.reduce((sum, p, r) => sum + p * game.xpByRarity[r], 0);
   });
 
-  const prestigeTable = perLevel(game, rules, "LuresPerPrestige", (level) => (prestigesPerDay * interval / 24) * value("LuresPerPrestige", level));
+  const prestigeTable = perLevel(game, rules, "LuresPerPrestige", (level) => (prestigesPerDay * interval / 24) * (rules.prestigeLuresBase + value("LuresPerPrestige", level)));
   const capacityTable = perLevel(game, rules, "TackleBoxSize", (level) => rules.tackleboxBaseCapacity + value("TackleBoxSize", level));
-  const minutesTable = perLevel(game, rules, "TackleBoxSpeed", (level) => value("TackleBoxSpeed", level) * rules.tackleboxUnitMinutes);
+  const secondsTable = perLevel(game, rules, "TackleBoxSpeed", (level) => rules.tackleboxBaseSeconds + value("TackleBoxSpeed", level) * rules.tackleboxUnitSeconds);
   const capTable = perLevel(game, rules, "LuresPerDay", (level) => rules.dailyCapBase + value("LuresPerDay", level));
 
   return {
@@ -67,11 +67,12 @@ export function createModel(game, rules, settings) {
     cost: (id, level) => upgradeCost(game, rules, id, level),
     catchSize: (levels) => at(sizeTable, levels.FishingSkill)[levels.FishingHook - hookLevels.min],
     catchCoins: (levels) => at(coinsTable, levels[rules.rarityLevelFrom]),
-    luresPerVisit: (levels) => {
+    prestigeLuresPerStep: (levels) => at(prestigeTable, levels.LuresPerPrestige),
+    tackleboxLuresPerStep: (levels) => {
       const capacity = at(capacityTable, levels.TackleBoxSize);
-      const minutes = at(minutesTable, levels.TackleBoxSpeed);
-      const perVisit = minutes > 0 ? Math.min(capacity, (visitInterval * 60) / minutes) : capacity;
-      return at(prestigeTable, levels.LuresPerPrestige) + visitsPerStep * perVisit;
+      const seconds = at(secondsTable, levels.TackleBoxSpeed);
+      const perVisit = seconds > 0 ? Math.min(capacity, (visitInterval * 3600) / seconds) : capacity;
+      return visitsPerStep * perVisit;
     },
     dailyCap: (levels) => at(capTable, levels.LuresPerDay)
   };

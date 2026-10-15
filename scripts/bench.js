@@ -1,6 +1,6 @@
 // Measures the search methods on the real game data: time and final length of each method, and of the portfolio within its deadline.
 // Usage: node scripts/bench.js
-// The two base values below are invented to exercise the engine; they are not game values.
+// The rules are those of data/rules.json, bases included (read in game on 2026-10-15).
 import fs from "node:fs";
 import { buildGameData, DATA_FILES, UPGRADE_IDS } from "../site/lib/gameData.js";
 import { loadRules } from "../site/lib/rules.js";
@@ -8,10 +8,9 @@ import { createModel } from "../site/lib/model.js";
 import { initialState } from "../site/lib/simulate.js";
 import { lookaheadOrder, beamOrder, improveOrder, findBestPlan, evaluate, DEADLINE_MS } from "../site/lib/search.js";
 
-const TEST_BASES = { dailyCapBase: 100, tackleboxBaseCapacity: 10 };
 const read = (file) => fs.readFileSync(new URL(`../site/data/${file}`, import.meta.url), "utf8");
 const game = buildGameData(Object.fromEntries(Object.entries(DATA_FILES).map(([k, f]) => [k, read(f)])));
-const rules = { ...loadRules(JSON.parse(read("rules.json")), game), ...TEST_BASES };
+const rules = loadRules(JSON.parse(read("rules.json")), game);
 
 const CASES = [
   { hoursLeft: 72, prestigesPerDay: 10, visitsPerDay: 6 },
@@ -26,7 +25,6 @@ const timed = (fn) => {
 };
 const fmt = (n) => Math.round(n).toLocaleString("en-US");
 
-console.log(`Test-only bases (not game values): daily limit base ${TEST_BASES.dailyCapBase}, Tacklebox base capacity ${TEST_BASES.tackleboxBaseCapacity}`);
 console.log(`Start: every upgrade at its minimum level, 0 coins, 20 lures, 0 length. Portfolio deadline: ${DEADLINE_MS} ms.`);
 console.log("");
 console.log("| Case | First plan (lookahead 1) | Lookahead 3 | Beam 30 | Improved lookahead 3 | Portfolio within deadline |");

@@ -3,7 +3,10 @@
 
 const PHASES = ["collect", "buyBefore", "fish", "buyAfter"];
 
-/** The state at the start of visit 0 (now). input = { levels, coins, lures, hoursLeft, lengthSoFar }. */
+/**
+ * The state at the start of visit 0 (now). input = { levels, coins, lures, hoursLeft, lengthSoFar, hoursToReset?, prestigeLuresToday? }:
+ * hoursToReset, the hours to the next daily reset (24 when not given); prestigeLuresToday, the prestige lures already received today.
+ */
 export function initialState(model, input) {
   return {
     visit: 0,
@@ -13,7 +16,8 @@ export function initialState(model, input) {
     coins: input.coins,
     lures: input.lures,
     length: input.lengthSoFar,
-    caughtToday: 0,
+    hoursToReset: input.hoursToReset ?? 24,
+    prestigeToday: input.prestigeLuresToday ?? 0,
     day: 0
   };
 }
@@ -68,24 +72,30 @@ function run(model, start, policy, stopAfter = Infinity) {
     }
   };
 
-  const fish = () => {
-    const day = Math.floor((s.visit * model.interval) / 24 + 1e-9);
+  // Lures received since the last visit: prestige lures up to what is left of the daily limit, and the Tacklebox's.
+  const collect = () => {
+    const hour = s.visit * model.interval;
+    const day = hour < s.hoursToReset - 1e-9 ? 0 : 1 + Math.floor((hour - s.hoursToReset) / 24 + 1e-9);
     if (day !== s.day) {
       s.day = day;
-      s.caughtToday = 0;
+      s.prestigeToday = 0;
     }
-    const allowed = Math.max(0, model.dailyCap(s.levels) - s.caughtToday);
-    const catches = Math.min(s.lures / luresPerCatch, allowed);
+    const prestige = Math.min(model.prestigeLuresPerStep(s.levels), Math.max(0, model.dailyCap(s.levels) - s.prestigeToday));
+    s.prestigeToday += prestige;
+    s.lures += prestige + model.tackleboxLuresPerStep(s.levels);
+  };
+
+  const fish = () => {
+    const catches = s.lures / luresPerCatch;
     if (catches <= 0) return;
     s.lures -= catches * luresPerCatch;
-    s.caughtToday += catches;
     s.length += catches * model.catchSize(s.levels);
     s.coins += catches * model.catchCoins(s.levels);
   };
 
   while (s.visit <= s.lastVisit) {
     if (s.phase === "collect") {
-      if (s.visit > 0) s.lures += model.luresPerVisit(s.levels);
+      if (s.visit > 0) collect();
       s.phase = "buyBefore";
     }
     if (s.phase === "buyBefore") {

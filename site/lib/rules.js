@@ -41,7 +41,8 @@ function base(rule, field) {
 /** The level range of an upgrade under the rules' level indexing. */
 export function levelRange(game, rules, id) {
   const upgrade = game.upgrades[id];
-  return { min: rules.minLevel, max: Math.min(upgrade.maxLevel, upgrade.values.length - 1 - rules.valueOffset) };
+  const max = Math.min(upgrade.maxLevel, upgrade.values.length - 1 - rules.valueOffset, rules.maxLevel ?? Infinity);
+  return { min: rules.minLevel, max };
 }
 
 function checkLevel(game, rules, id, level) {
@@ -99,8 +100,9 @@ export function loadRules(json, game) {
 
   const { tacklebox, dailyCap, species, size, rarity, levels, upgradeNames } = byId;
   oneOf(tacklebox, "zeroSpeed", ["fullEachVisit"]);
-  oneOf(dailyCap, "appliesTo", ["catches"]);
-  oneOf(dailyCap, "window", ["24hFromNow"]);
+  oneOf(dailyCap, "appliesTo", ["prestigeLures"]);
+  const resetHourUtc = finite(dailyCap, "resetHourUtc");
+  if (resetHourUtc < 0 || resetHourUtc >= 24) throw problem("dailyCap", "resetHourUtc must be from 0 to below 24");
   oneOf(species, "weights", ["equal"]);
   oneOf(size, "model", ["uniformTimesHook"]);
 
@@ -113,20 +115,28 @@ export function loadRules(json, game) {
 
   const luresPerCatch = finite(byId.luresPerCatch, "value");
   if (luresPerCatch <= 0) throw problem("luresPerCatch", "value must be above 0");
-  const tackleboxUnitMinutes = finite(tacklebox, "unitMinutes");
-  if (tackleboxUnitMinutes < 0) throw problem("tacklebox", "unitMinutes must be at least 0");
+  const tackleboxBaseSeconds = finite(tacklebox, "baseSeconds");
+  const tackleboxUnitSeconds = finite(tacklebox, "unitSeconds");
+  if (tackleboxBaseSeconds < 0 || tackleboxUnitSeconds < 0) throw problem("tacklebox", "baseSeconds and unitSeconds must be at least 0");
+  const prestigeLuresBase = finite(byId.prestigeLures, "base");
+  if (prestigeLuresBase < 0) throw problem("prestigeLures", "base must be at least 0");
+  if (levels.maxLevel !== undefined && levels.maxLevel !== null) integer(levels, "maxLevel");
 
   const rules = {
     sizeUnit: json.sizeUnit,
     luresPerCatch,
-    tackleboxUnitMinutes,
+    prestigeLuresBase,
+    tackleboxBaseSeconds,
+    tackleboxUnitSeconds,
     tackleboxBaseCapacity: base(tacklebox, "baseCapacity"),
     tackleboxZeroSpeed: tacklebox.zeroSpeed,
     dailyCapBase: base(dailyCap, "base"),
+    dailyResetHourUtc: resetHourUtc,
     speciesUnlock: oneOf(species, "unlock", ["levelBelowSkill", "levelAtMostSkill"]),
     rarityLevelFrom: oneOf(rarity, "levelFrom", UPGRADE_IDS),
     rarityLevelOffset: integer(rarity, "levelOffset"),
     minLevel: integer(levels, "minLevel"),
+    maxLevel: levels.maxLevel ?? null,
     valueOffset: integer(levels, "valueOffset"),
     costOffset: integer(levels, "costOffset"),
     names: Object.fromEntries(UPGRADE_IDS.map((id) => [id, names[id]])),
@@ -159,4 +169,10 @@ export function withShownValues(rules, game, shown) {
   derive("dailyCapBase", "LuresPerDay", shown?.dailyCap, "daily limit");
   derive("tackleboxBaseCapacity", "TackleBoxSize", shown?.tackleboxCapacity, "Tacklebox capacity");
   return out;
+}
+
+/** Hours from `date` to the next daily reset at `resetHourUtc` (24 when the reset is right now). */
+export function hoursUntilReset(date, resetHourUtc) {
+  const hoursIntoDay = (date.getTime() / 3600000 - resetHourUtc) % 24;
+  return 24 - (hoursIntoDay + 24) % 24;
 }

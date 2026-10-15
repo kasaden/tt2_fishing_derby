@@ -27,14 +27,12 @@ export function tinyGame(costs = {}) {
 
 export function tinyRules(overrides = {}) {
   return {
-    sizeUnit: null, luresPerCatch: 1, tackleboxUnitMinutes: 1, tackleboxBaseCapacity: 4, tackleboxZeroSpeed: "fullEachVisit",
-    dailyCapBase: 100, speciesUnlock: "levelBelowSkill", rarityLevelFrom: "FishingBait", rarityLevelOffset: 1,
-    minLevel: 1, valueOffset: -1, costOffset: -1,
+    sizeUnit: null, luresPerCatch: 1, prestigeLuresBase: 0, tackleboxBaseSeconds: 0, tackleboxUnitSeconds: 60, tackleboxBaseCapacity: 4,
+    tackleboxZeroSpeed: "fullEachVisit", dailyCapBase: 100, dailyResetHourUtc: 0, speciesUnlock: "levelBelowSkill", rarityLevelFrom: "FishingBait", rarityLevelOffset: 1,
+    minLevel: 1, maxLevel: null, valueOffset: -1, costOffset: -1,
     names: Object.fromEntries(UPGRADE_IDS.map((id) => [id, id])), hidden: [], list: [], ...overrides
   };
 }
 
 export const realGame = () => buildGameData(Object.fromEntries(Object.entries(DATA_FILES).map(([k, f]) => [k, fs.readFileSync(new URL(`../site/data/${f}`, import.meta.url), "utf8")])));
 export const realRules = (game) => loadRules(JSON.parse(fs.readFileSync(new URL("../site/data/rules.json", import.meta.url), "utf8")), game);
-// Test-only bases: invented to exercise the engine on real data, never shipped as game values.
-export const TEST_BASES = { dailyCapBase: 100, tackleboxBaseCapacity: 10 };

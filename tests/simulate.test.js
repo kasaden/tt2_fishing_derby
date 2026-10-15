@@ -13,14 +13,18 @@ const hook = () => "FishingHook";
 describe("simulate", () => {
   it("fishes at every visit with no purchase", () =>
     assert.deepEqual(simulate(model(), start(model()), none), { finalLength: 44, coinsLeft: 22, luresLeft: 0, purchases: [] }));
-  it("stops at the daily limit and keeps the lures", () => {
-    const m = model({ dailyCapBase: 8 });
-    assert.deepEqual(simulate(m, start(m), none), { finalLength: 16, coinsLeft: 8, luresLeft: 14, purchases: [] });
+  it("caps the prestige lures received in a day, not the catches", () => {
+    // limit 3: visit 1 receives 2 prestige lures, visit 2 only 1; the Tacklebox (4 a visit) and the 10 in stock are not limited
+    const m = model({ dailyCapBase: 3 });
+    assert.deepEqual(simulate(m, start(m), none), { finalLength: 42, coinsLeft: 21, luresLeft: 0, purchases: [] });
   });
-  it("resets the daily limit every 24 hours", () => {
-    const m = model({ dailyCapBase: 8 });
-    const r = simulate(m, start(m, { hoursLeft: 30 }), none);
-    assert.deepEqual([r.finalLength, r.coinsLeft, r.luresLeft], [32, 16, 24]);
+  it("resets the limit at the daily reset", () => {
+    const m = model({ dailyCapBase: 3 });
+    assert.equal(simulate(m, start(m, { hoursToReset: 12 }), none).finalLength, 44);
+  });
+  it("counts the prestige lures already received today", () => {
+    const m = model({ dailyCapBase: 3 });
+    assert.equal(simulate(m, start(m, { prestigeLuresToday: 3 }), none).finalLength, 36);
   });
   it("buys before fishing and after, and records each purchase", () => {
     const m = model();

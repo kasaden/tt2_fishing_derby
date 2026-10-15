@@ -37,7 +37,7 @@ export function compareResults(a, b) {
 
 /** Expected length caught per hour at these levels, in the steady state. */
 function lengthPerHour(model, levels) {
-  const lures = Math.min(model.luresPerVisit(levels) / model.interval, model.dailyCap(levels) / 24);
+  const lures = Math.min(model.prestigeLuresPerStep(levels) / model.interval, model.dailyCap(levels) / 24) + model.tackleboxLuresPerStep(levels) / model.interval;
   return (lures / model.rules.luresPerCatch) * model.catchSize(levels);
 }
 

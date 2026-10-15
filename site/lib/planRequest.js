@@ -23,7 +23,9 @@ export function runPlanRequest({ game, rules, input }, { post, now }) {
       coins: input.coins,
       lures: input.lures,
       hoursLeft: input.hoursLeft,
-      lengthSoFar: input.lengthSoFar
+      lengthSoFar: input.lengthSoFar,
+      hoursToReset: input.hoursToReset,
+      prestigeLuresToday: input.prestigeLuresToday
     });
     const plan = findBestPlan(model, state, {
       deadline: now() + DEADLINE_MS,

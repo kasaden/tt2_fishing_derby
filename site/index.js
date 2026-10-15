@@ -1,6 +1,6 @@
 // The page: loads the data, keeps the player's input, asks the worker for a plan and shows it.
 import { UPGRADE_IDS } from "./lib/gameData.js";
-import { levelRange, missingBases } from "./lib/rules.js";
+import { levelRange, missingBases, hoursUntilReset } from "./lib/rules.js";
 import { tiersReached } from "./lib/model.js";
 import { loadData } from "./lib/load.js";
 import { loadInput, writeInput, missingFields } from "./lib/input.js";
@@ -9,7 +9,7 @@ import { formatLength, formatPurchaseTime, upgradeLabel, whyLine, formatReward, 
 const $ = (id) => document.getElementById(id);
 const RECALC_DELAY_MS = 150;
 const MAX_HOURS_LEFT = 30 * 24; // input sanity bounds, not game values: they keep a typo from freezing the search
-const ZERO_WHEN_EMPTY = new Set(["coins", "lures", "lengthSoFar"]);
+const ZERO_WHEN_EMPTY = new Set(["coins", "lures", "prestigeLuresToday", "lengthSoFar"]);
 const PLAN_ROWS_SHOWN = 10;
 
 const FIELD_LABELS = {
@@ -82,6 +82,7 @@ function readForm() {
     ...input,
     coins: numberOrZero($("coins")),
     lures: numberOrZero($("lures")),
+    prestigeLuresToday: numberOrZero($("prestigeLuresToday")),
     lengthSoFar: numberOrZero($("lengthSoFar")),
     hoursLeft: readTimeLeft(),
     prestigesPerDay: numberOrNull($("prestigesPerDay")),
@@ -110,6 +111,7 @@ const setValue = (id, value) => {
 function fillForm() {
   setValue("coins", input.coins);
   setValue("lures", input.lures);
+  setValue("prestigeLuresToday", input.prestigeLuresToday);
   setValue("lengthSoFar", input.lengthSoFar);
   if (input.hoursLeft === null) {
     setValue("daysLeft", null);
@@ -367,7 +369,8 @@ function requestPlan() {
   requestId += 1;
   running = true;
   setProgress("Working out the plan…", true);
-  worker.postMessage({ id: requestId, game, rules, input });
+  // the hours to the daily reset come from the clock at each request, not from what was saved
+  worker.postMessage({ id: requestId, game, rules, input: { ...input, hoursToReset: hoursUntilReset(new Date(), rules.dailyResetHourUtc) } });
 }
 
 function changed() {
